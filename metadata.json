@@ -1,0 +1,6 @@
+{
+  "name": "Monikaz Parlour",
+  "description": "Luxury beauty parlour & salon booking web application with real-time status tracking, staff selection, service catalog, reviews, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
