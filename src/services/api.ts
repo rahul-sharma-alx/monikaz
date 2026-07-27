@@ -44,9 +44,9 @@ export const api = {
       return cached;
     }
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('services').select('*').order('created_at', { ascending: false });
-      if (!error && data) { setCache('services', data); return data as Service[]; }
+      if (!error && data && data.length > 0) { setCache('services', data); return data as Service[]; }
     }
     const data = await fetchApi<Service[]>('/api/services');
     setCache('services', data);
@@ -99,7 +99,7 @@ export const api = {
       return cached;
     }
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: true });
       if (!error && data) { setCache('staff', data); return data as Staff[]; }
     }
@@ -212,7 +212,7 @@ export const api = {
       return cached;
     }
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
       if (currentUser && currentUser.role === 'customer') {
         query = query.eq('customer_id', currentUser.id);
@@ -308,7 +308,7 @@ export const api = {
       return cached;
     }
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const [shopRes, addrRes, smRes] = await Promise.all([
         supabase.from('shops').select('*').limit(1).single(),
         supabase.from('addresses').select('*'),
