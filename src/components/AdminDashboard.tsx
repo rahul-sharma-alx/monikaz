@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Service, Staff, Booking, Review, BookingStatus, SupabaseConfig } from '../types';
 import {
   TrendingUp, Calendar, Users, Star, DollarSign, Plus, Edit,
-  CheckCircle2, XCircle, Clock, Search, Filter, ShieldCheck, Database, Copy, Check
+  CheckCircle2, XCircle, Clock, Search, Filter, ShieldCheck, Database, Copy, Check,
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Scissors
 } from 'lucide-react';
 import { SUPABASE_SQL_SCHEMA, getTodayString } from '../data/initialData';
 
@@ -36,6 +37,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSaveSupabaseCredentials,
 }) => {
   const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'supabase'>('overview');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   // Filters
   const [bookingFilterDate, setBookingFilterDate] = useState<string>('');
@@ -134,7 +136,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <section className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
       
       {/* Top Admin Banner */}
-      <div className="bg-gradient-to-r from-[#2C221E] via-[#4A3933] to-[#2C221E] text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-[#D4AF37]/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-[#2C221E] via-[#4A3933] to-[#2C221E] text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#E5C380] text-xs font-bold uppercase">
             <ShieldCheck className="w-3.5 h-3.5" /> Owner & Admin Command Center
@@ -145,30 +147,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
 
-        {/* Quick Nav Badges */}
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'bookings', label: `Bookings (${bookings.length})` },
-            { id: 'services', label: `Services (${services.length})` },
-            { id: 'staff', label: `Staff (${staffList.length})` },
-            { id: 'reviews', label: `Reviews (${reviews.length})` },
-            { id: 'supabase', label: 'Supabase SQL' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setAdminTab(tab.id as any)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                adminTab === tab.id
-                  ? 'bg-[#D4AF37] text-[#2C221E] shadow-sm'
-                  : 'bg-white/10 text-stone-200 hover:bg-white/20'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Live Admin Status Pill */}
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-stone-200 text-xs font-bold shrink-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Active Session ({bookings.length} Bookings)</span>
         </div>
       </div>
+
+      {/* Main Admin Sidebar + Content Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 min-h-[600px] items-start">
+        
+        {/* Collapsible Left Command Center Sidebar */}
+        <aside
+          className={`bg-[#2C221E] text-white rounded-3xl p-4 shadow-xl border border-[#D4AF37]/30 transition-all duration-300 flex flex-col justify-between w-full ${
+            isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+          } shrink-0 sticky top-24 z-30`}
+        >
+          <div className="space-y-6">
+            
+            {/* Sidebar Header & Toggle Button */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-[#4A3933]">
+              {!isSidebarCollapsed && (
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-xs text-white truncate">Command Center</h4>
+                    <p className="text-[10px] text-stone-400">Sidebar Navigation</p>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                className={`p-2 rounded-xl bg-[#4A3933] hover:bg-[#5C4840] text-[#D4AF37] transition-colors cursor-pointer ${
+                  isSidebarCollapsed ? 'mx-auto' : ''
+                }`}
+              >
+                {isSidebarCollapsed ? <PanelLeftOpen className="w-4.5 h-4.5" /> : <PanelLeftClose className="w-4.5 h-4.5" />}
+              </button>
+            </div>
+
+            {/* Navigation Items */}
+            <nav className="space-y-1.5">
+              {[
+                { id: 'overview', label: 'Overview', icon: LayoutDashboard, count: null },
+                { id: 'bookings', label: 'Bookings', icon: Calendar, count: bookings.length },
+                { id: 'services', label: 'Services', icon: Scissors, count: services.length },
+                { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
+                { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
+                { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = adminTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setAdminTab(item.id as any)}
+                    title={isSidebarCollapsed ? `${item.label} ${item.count !== null ? `(${item.count})` : ''}` : undefined}
+                    className={`w-full flex items-center rounded-2xl py-3 px-3 text-xs font-bold transition-all cursor-pointer ${
+                      isSidebarCollapsed ? 'justify-center' : 'justify-between'
+                    } ${
+                      isActive
+                        ? 'bg-[#D4AF37] text-[#2C221E] shadow-sm font-extrabold'
+                        : 'text-stone-300 hover:bg-[#4A3933] hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#2C221E]' : 'text-[#D4AF37]'}`} />
+                      {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
+                    </div>
+
+                    {!isSidebarCollapsed && item.count !== null && (
+                      <span
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
+                          isActive ? 'bg-[#2C221E] text-white' : 'bg-[#4A3933] text-stone-300'
+                        }`}
+                      >
+                        {item.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Footer in expanded mode */}
+          {!isSidebarCollapsed && (
+            <div className="mt-8 pt-4 border-t border-[#4A3933] text-[11px] text-stone-400 space-y-1">
+              <p className="font-semibold text-stone-300">Monikaz Admin Portal</p>
+              <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Sync Active
+              </p>
+            </div>
+          )}
+        </aside>
+
+        {/* Right Main Content Panel */}
+        <main className="flex-1 min-w-0 space-y-6 w-full">
 
       {/* OVERVIEW TAB */}
       {adminTab === 'overview' && (
@@ -187,9 +268,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="bg-white p-6 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#8A7568] uppercase">Est. Today's Revenue</span>
-                <DollarSign className="w-5 h-5 text-emerald-600" />
+                <span className="w-5 h-5 text-emerald-600 font-serif font-bold text-lg flex items-center justify-center">₹</span>
               </div>
-              <p className="font-serif text-3xl font-bold text-[#2C221E]">${todayRevenue}</p>
+              <p className="font-serif text-3xl font-bold text-[#2C221E]">₹{todayRevenue}</p>
               <p className="text-[11px] text-emerald-600 font-semibold">Active appointments value</p>
             </div>
 
@@ -317,7 +398,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <p className="text-[#8A7568]">{b.start_time} - {b.end_time}</p>
                     </td>
                     <td className="p-3 text-[#52433A] font-medium">{b.staff_name}</td>
-                    <td className="p-3 font-bold text-[#2C221E]">${b.service_price}</td>
+                    <td className="p-3 font-bold text-[#2C221E]">₹{b.service_price}</td>
                     <td className="p-3">
                       <select
                         value={b.status}
@@ -371,7 +452,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] uppercase font-bold text-[#A87B51]">{srv.category}</span>
-                    <span className="font-bold text-[#2C221E]">${srv.price}</span>
+                    <span className="font-bold text-[#2C221E]">₹{srv.price}</span>
                   </div>
                   <h4 className="font-serif text-lg font-bold text-[#2C221E] mt-1">{srv.name}</h4>
                   <p className="text-xs text-[#68584E] mt-1 line-clamp-2">{srv.description}</p>
@@ -577,6 +658,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+        </main>
+      </div>
+
       {/* SERVICE MODAL */}
       {isServiceModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -608,7 +692,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#2C221E]">Price ($)</label>
+                  <label className="block font-bold text-[#2C221E]">Price (₹)</label>
                   <input
                     type="number"
                     value={serviceForm.price}

@@ -31,7 +31,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
   searchQuery,
   setSearchQuery
 }) => {
-  const [maxPrice, setMaxPrice] = useState<number>(400);
+  const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [durationFilter, setDurationFilter] = useState<DurationFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [detailModalService, setDetailModalService] = useState<Service | null>(null);
@@ -246,14 +246,14 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                 <Filter className="w-3.5 h-3.5" />
                 <span>Max Price</span>
               </span>
-              <span className="text-[#2C221E] font-bold text-xs">${maxPrice}</span>
+              <span className="text-[#2C221E] font-bold text-xs">₹{maxPrice}</span>
             </div>
             <div className="bg-white p-2 rounded-2xl border border-[#E3D8CE] flex items-center gap-3">
               <input
                 type="range"
-                min="50"
-                max="400"
-                step="10"
+                min="500"
+                max="5000"
+                step="100"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
                 className="w-full accent-[#2C221E] cursor-pointer h-2"
@@ -280,10 +280,10 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                   <X className="w-3 h-3 cursor-pointer" onClick={() => setDurationFilter('all')} />
                 </span>
               )}
-              {maxPrice < 400 && (
+              {maxPrice < 5000 && (
                 <span className="bg-[#EAE1D8] text-[#2C221E] px-2.5 py-1 rounded-full font-medium text-[11px] flex items-center gap-1">
-                  Max ${maxPrice}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setMaxPrice(400)} />
+                  Max ₹{maxPrice}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setMaxPrice(5000)} />
                 </span>
               )}
               {searchQuery && (
@@ -338,7 +338,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                     {service.category}
                   </div>
                   <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-[#2C221E] text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-                    ${service.price}
+                    ₹{service.price}
                   </div>
                 </div>
 
@@ -412,7 +412,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                   {detailModalService.category}
                 </span>
                 <span className="font-serif text-2xl font-bold text-[#2C221E]">
-                  ${detailModalService.price}
+                  ₹{detailModalService.price}
                 </span>
               </div>
 

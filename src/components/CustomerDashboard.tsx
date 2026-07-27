@@ -230,7 +230,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
 
                     {/* Right Price & Actions */}
                     <div className="flex items-center justify-between md:flex-col md:items-end gap-3 shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-[#F2ECE6]">
-                      <span className="font-serif text-2xl font-bold text-[#2C221E]">${bk.service_price}</span>
+                      <span className="font-serif text-2xl font-bold text-[#2C221E]">₹{bk.service_price}</span>
 
                       <div className="flex items-center gap-2">
                         {/* Cancellation Button for Pending / Confirmed */}
