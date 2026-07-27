@@ -4,10 +4,10 @@
   "installCommand": "npm ci",
   "framework": null,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/index.ts": {
+    "api/index.cjs": {
       "memory": 512,
       "maxDuration": 30
     }
