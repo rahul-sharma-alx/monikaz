@@ -70,17 +70,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTimeout(onClose, 600);
   };
 
+  const handleDemoStaffLogin = () => {
+    onLogin({
+      id: 'user-s1',
+      full_name: 'Elena Rostova (Staff)',
+      phone: '+91 98765 22222',
+      email: 'elena.r@monikazparlour.com',
+      role: 'staff',
+      permissions: ['manage_bookings', 'manage_reviews'],
+      avatar_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=300',
+      created_at: new Date().toISOString(),
+    });
+    setMessage({ type: 'success', text: 'Logged in as Elena Rostova (Staff)' });
+    setTimeout(onClose, 600);
+  };
+
+  const handleDemoManagerLogin = () => {
+    onLogin({
+      id: 'user-m1',
+      full_name: 'Aisha Patel (Manager)',
+      phone: '+91 98765 11111',
+      email: 'aisha.p@monikazparlour.com',
+      role: 'manager',
+      permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews'],
+      avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300',
+      created_at: new Date().toISOString(),
+    });
+    setMessage({ type: 'success', text: 'Logged in as Aisha Patel (Parlour Manager)' });
+    setTimeout(onClose, 600);
+  };
+
   const handleDemoAdminLogin = () => {
     onLogin({
       id: 'user-a1',
-      full_name: 'Monika Sharma (Owner)',
-      phone: '+91 99999 00000',
+      full_name: 'Monika Sharma (Owner & Admin)',
+      phone: '+91 98765 00000',
       email: 'monika@monikazparlour.com',
       role: 'admin',
+      permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews', 'manage_permissions'],
       avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
       created_at: new Date().toISOString(),
     });
-    setMessage({ type: 'success', text: 'Logged in as Monika Sharma (Owner / Admin)' });
+    setMessage({ type: 'success', text: 'Logged in as Monika Sharma (Owner / Full Admin)' });
     setTimeout(onClose, 600);
   };
 
@@ -409,16 +440,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={handleDemoCustomerLogin}
-                  className="py-2.5 px-3 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#2C221E] text-xs font-semibold cursor-pointer text-center min-h-[44px]"
+                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#2C221E] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
                 >
-                  Demo Customer
+                  <div>
+                    <span className="block font-bold text-[#2C221E]">Customer</span>
+                    <span className="block text-[9px] text-[#8A7568]">Sophia W.</span>
+                  </div>
+                  <User className="w-3.5 h-3.5 text-[#A87B51]" />
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleDemoStaffLogin}
+                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#2C221E] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
+                >
+                  <div>
+                    <span className="block font-bold text-[#2C221E]">Staff Role</span>
+                    <span className="block text-[9px] text-[#8A7568]">Elena R.</span>
+                  </div>
+                  <User className="w-3.5 h-3.5 text-[#A87B51]" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDemoManagerLogin}
+                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#8C6D58] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
+                >
+                  <div>
+                    <span className="block font-bold text-[#8C6D58]">Manager</span>
+                    <span className="block text-[9px] text-[#8A7568]">Aisha P.</span>
+                  </div>
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C6D58]" />
+                </button>
+
                 <button
                   type="button"
                   onClick={handleDemoAdminLogin}
-                  className="py-2.5 px-3 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#8C6D58] text-xs font-bold cursor-pointer text-center min-h-[44px]"
+                  className="py-2 px-2.5 rounded-xl bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
                 >
-                  Demo Admin (Owner)
+                  <div>
+                    <span className="block font-bold text-[#D4AF37]">Owner/Admin</span>
+                    <span className="block text-[9px] text-stone-300">Monika S.</span>
+                  </div>
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
                 </button>
               </div>
 

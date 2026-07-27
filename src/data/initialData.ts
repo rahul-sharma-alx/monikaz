@@ -4,18 +4,39 @@ export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'user-c1',
     full_name: 'Sophia Williams',
-    phone: '+1 (555) 234-5678',
+    phone: '+91 98765 43210',
     email: 'sophia.w@example.com',
     role: 'customer',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
     created_at: new Date(Date.now() - 30 * 86400000).toISOString()
   },
   {
+    id: 'user-m1',
+    full_name: 'Aisha Patel (Manager)',
+    phone: '+91 98765 11111',
+    email: 'aisha.p@monikazparlour.com',
+    role: 'manager',
+    permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews'],
+    avatar_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300',
+    created_at: new Date(Date.now() - 180 * 86400000).toISOString()
+  },
+  {
+    id: 'user-s1',
+    full_name: 'Elena Rostova (Staff)',
+    phone: '+91 98765 22222',
+    email: 'elena.r@monikazparlour.com',
+    role: 'staff',
+    permissions: ['manage_bookings', 'manage_reviews'],
+    avatar_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=300',
+    created_at: new Date(Date.now() - 120 * 86400000).toISOString()
+  },
+  {
     id: 'user-a1',
-    full_name: 'Monika Sharma (Owner)',
-    phone: '+1 (555) 999-0000',
+    full_name: 'Monika Sharma (Owner & Admin)',
+    phone: '+91 98765 00000',
     email: 'monika@monikazparlour.com',
     role: 'admin',
+    permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews', 'manage_permissions'],
     avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
     created_at: new Date(Date.now() - 365 * 86400000).toISOString()
   }
@@ -109,16 +130,24 @@ export const INITIAL_STAFF: Staff[] = [
     specialties: ['Balayage & Hair Colour', 'Keratin Treatments', 'Bridal Hair'],
     photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
     is_active: true,
+    role: 'admin',
+    email: 'monika@monikazparlour.com',
+    phone: '+91 98765 00000',
+    permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews', 'manage_permissions'],
     rating: 4.9,
     reviews_count: 48
   },
   {
     id: 'stf-2',
     full_name: 'Aisha Patel',
-    bio: 'Licensed Senior Medical Esthetician and Skincare Guru. Passionate about 24K Gold facials, anti-aging therapies, and sensitive skin restoration.',
+    bio: 'Licensed Senior Medical Esthetician and Skincare Guru & Parlour Manager. Passionate about 24K Gold facials, anti-aging therapies, and sensitive skin restoration.',
     specialties: ['24K Gold Facial', 'Hydra Facials', 'Chemical Peels'],
     photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400',
     is_active: true,
+    role: 'manager',
+    email: 'aisha.p@monikazparlour.com',
+    phone: '+91 98765 11111',
+    permissions: ['view_analytics', 'manage_bookings', 'manage_services', 'manage_staff', 'manage_reviews'],
     rating: 4.95,
     reviews_count: 39
   },
@@ -129,6 +158,10 @@ export const INITIAL_STAFF: Staff[] = [
     specialties: ['Gel Spa Manicure', 'Acrylic Nail Art', 'Russian Manicure'],
     photo_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400',
     is_active: true,
+    role: 'staff',
+    email: 'elena.r@monikazparlour.com',
+    phone: '+91 98765 22222',
+    permissions: ['manage_bookings', 'manage_reviews'],
     rating: 4.88,
     reviews_count: 27
   },
@@ -139,6 +172,10 @@ export const INITIAL_STAFF: Staff[] = [
     specialties: ['Couture Bridal Glam', 'Airbrush Makeup', 'Evening Glam'],
     photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
     is_active: true,
+    role: 'staff',
+    email: 'sophia.r@monikazparlour.com',
+    phone: '+91 98765 33333',
+    permissions: ['manage_bookings'],
     rating: 5.0,
     reviews_count: 32
   },
@@ -149,6 +186,10 @@ export const INITIAL_STAFF: Staff[] = [
     specialties: ['Deep Tissue Spa', 'Aromatherapy Massage', 'Body Scrubs'],
     photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
     is_active: true,
+    role: 'staff',
+    email: 'priya.n@monikazparlour.com',
+    phone: '+91 98765 44444',
+    permissions: ['manage_bookings'],
     rating: 4.92,
     reviews_count: 21
   }

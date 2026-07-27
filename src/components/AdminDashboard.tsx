@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Service, Staff, Booking, Review, BookingStatus, SupabaseConfig } from '../types';
+import { Service, Staff, Booking, Review, BookingStatus, SupabaseConfig, Profile, UserRole, PermissionKey } from '../types';
 import {
   TrendingUp, Calendar, Users, Star, DollarSign, Plus, Edit,
   CheckCircle2, XCircle, Clock, Search, Filter, ShieldCheck, Database, Copy, Check,
-  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Scissors
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Scissors, Lock, ShieldAlert, Key, CheckSquare, Square, Mail, Phone, User
 } from 'lucide-react';
 import { SUPABASE_SQL_SCHEMA, getTodayString } from '../data/initialData';
+import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, hasPermission } from '../lib/permissions';
 
 interface AdminDashboardProps {
+  currentUser: Profile | null;
   services: Service[];
   staffList: Staff[];
   bookings: Booking[];
@@ -23,6 +25,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  currentUser,
   services,
   staffList,
   bookings,
@@ -36,8 +39,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   supabaseConfig,
   onSaveSupabaseCredentials,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'supabase'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'security' | 'supabase'>('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
+  // Security & Permission Checks
+  const canViewAnalytics = hasPermission(currentUser, 'view_analytics');
+  const canManageBookings = hasPermission(currentUser, 'manage_bookings');
+  const canManageServices = hasPermission(currentUser, 'manage_services');
+  const canManageStaff = hasPermission(currentUser, 'manage_staff');
+  const canManageReviews = hasPermission(currentUser, 'manage_reviews');
+  const canManagePermissions = hasPermission(currentUser, 'manage_permissions');
 
   // Filters
   const [bookingFilterDate, setBookingFilterDate] = useState<string>('');
@@ -157,10 +168,51 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Main Admin Sidebar + Content Layout */}
       <div className="flex flex-col lg:flex-row gap-6 min-h-[600px] items-start">
         
-        {/* Collapsible Left Command Center Sidebar */}
+        {/* Mobile Screen Horizontal Nav Bar (Prevents vertical sidebar from covering mobile screen) */}
+        <div className="lg:hidden w-full bg-[#2C221E] text-white rounded-2xl p-2 shadow-lg border border-[#D4AF37]/30 sticky top-16 z-30">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1">
+            {[
+              { id: 'overview', label: 'Overview', icon: LayoutDashboard, count: null },
+              { id: 'bookings', label: 'Bookings', icon: Calendar, count: bookings.length },
+              { id: 'services', label: 'Services', icon: Scissors, count: services.length },
+              { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
+              { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
+              { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
+              { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = adminTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setAdminTab(item.id as any)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-[#D4AF37] text-[#2C221E] shadow-xs font-extrabold'
+                      : 'bg-[#4A3933]/70 text-stone-300 hover:bg-[#4A3933] hover:text-white'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#2C221E]' : 'text-[#D4AF37]'}`} />
+                  <span>{item.label}</span>
+                  {item.count !== null && (
+                    <span
+                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive ? 'bg-[#2C221E] text-white' : 'bg-[#2C221E]/60 text-stone-200'
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Collapsible Left Command Center Sidebar (Desktop Only) */}
         <aside
-          className={`bg-[#2C221E] text-white rounded-3xl p-4 shadow-xl border border-[#D4AF37]/30 transition-all duration-300 flex flex-col justify-between w-full ${
-            isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+          className={`hidden lg:flex bg-[#2C221E] text-white rounded-3xl p-4 shadow-xl border border-[#D4AF37]/30 transition-all duration-300 flex-col justify-between ${
+            isSidebarCollapsed ? 'w-20' : 'w-64'
           } shrink-0 sticky top-24 z-30`}
         >
           <div className="space-y-6">
@@ -199,6 +251,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { id: 'services', label: 'Services', icon: Scissors, count: services.length },
                 { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
                 { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
+                { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
                 { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
               ].map((item) => {
                 const Icon = item.icon;
@@ -479,55 +532,385 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* STAFF MANAGEMENT TAB */}
       {adminTab === 'staff' && (
-        <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-serif text-2xl font-bold text-[#2C221E]">Manage Staff Roster</h3>
+        <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-serif text-2xl font-bold text-[#2C221E]">Staff & Team Roster</h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] text-[#8C6D58] text-xs font-bold">
+                  {staffList.length} Team Members
+                </span>
+              </div>
+              <p className="text-xs text-[#8A7568] mt-1">
+                Manage team profiles, assigned roles (Admin, Manager, Staff), contact details, and custom permission clearances.
+              </p>
+            </div>
+
             <button
+              disabled={!canManageStaff}
               onClick={() => {
                 setEditingStaff(null);
                 setStaffForm({
                   full_name: '',
                   bio: '',
-                  specialties: ['Styling'],
+                  role: 'staff',
+                  email: '',
+                  phone: '',
+                  specialties: ['Styling & Cuts'],
                   photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
-                  is_active: true
+                  is_active: true,
+                  permissions: DEFAULT_ROLE_PERMISSIONS.staff
                 });
                 setIsStaffModalOpen(true);
               }}
-              className="bg-[#2C221E] hover:bg-[#4A3933] text-white px-4 py-2 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+              className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                canManageStaff
+                  ? 'bg-[#2C221E] hover:bg-[#4A3933] text-white cursor-pointer shadow-sm'
+                  : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Staff Member</span>
+              {canManageStaff ? <Plus className="w-4 h-4 text-[#D4AF37]" /> : <Lock className="w-4 h-4" />}
+              <span>{canManageStaff ? 'Add Staff Member' : 'Staff Addition Locked'}</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {staffList.map((stf) => (
-              <div key={stf.id} className="p-5 rounded-2xl border border-[#E3D8CE] bg-[#FAF6F3] space-y-3 flex items-start gap-4">
-                <img
-                  src={stf.photo_url}
-                  alt={stf.full_name}
-                  referrerPolicy="no-referrer"
-                  className="w-16 h-16 rounded-2xl object-cover shrink-0"
-                />
-                <div className="flex-1 space-y-1 text-xs">
-                  <h4 className="font-serif text-lg font-bold text-[#2C221E]">{stf.full_name}</h4>
-                  <p className="text-amber-600 font-bold">★ {stf.rating || 5.0} Rating</p>
-                  <p className="text-stone-500 line-clamp-2">{stf.bio}</p>
-                  <button
-                    onClick={() => {
-                      setEditingStaff(stf);
-                      setStaffForm(stf);
-                      setIsStaffModalOpen(true);
-                    }}
-                    className="text-[#2C221E] font-bold underline cursor-pointer block mt-2"
-                  >
-                    Edit Staff Profile
-                  </button>
+            {staffList.map((stf) => {
+              const staffRole = stf.role || 'staff';
+              const assignedPerms = stf.permissions || DEFAULT_ROLE_PERMISSIONS[staffRole] || [];
+
+              return (
+                <div key={stf.id} className="p-5 rounded-2xl border border-[#E3D8CE] bg-[#FAF6F3] space-y-4 flex flex-col justify-between shadow-2xs relative overflow-hidden">
+                  
+                  {/* Role Tag & Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide flex items-center gap-1 ${
+                        staffRole === 'admin'
+                          ? 'bg-[#2C221E] text-[#D4AF37] border border-[#D4AF37]/40'
+                          : staffRole === 'manager'
+                          ? 'bg-purple-900 text-purple-200 border border-purple-700'
+                          : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}
+                    >
+                      <ShieldCheck className="w-3 h-3" />
+                      <span>{staffRole === 'admin' ? 'Owner / Admin' : staffRole === 'manager' ? 'Manager' : 'Staff'}</span>
+                    </span>
+
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      stf.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {stf.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  {/* Avatar & Main Info */}
+                  <div className="flex items-start gap-3.5">
+                    <img
+                      src={stf.photo_url}
+                      alt={stf.full_name}
+                      referrerPolicy="no-referrer"
+                      className="w-16 h-16 rounded-2xl object-cover shrink-0 border-2 border-white shadow-xs"
+                    />
+                    <div className="flex-1 min-w-0 text-xs space-y-1">
+                      <h4 className="font-serif text-base font-bold text-[#2C221E] truncate">{stf.full_name}</h4>
+                      <p className="text-amber-600 font-bold flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-current inline" />
+                        <span>{stf.rating || 5.0} Rating ({stf.reviews_count || 12} reviews)</span>
+                      </p>
+                      
+                      {stf.email && (
+                        <p className="text-stone-500 truncate flex items-center gap-1 text-[11px]">
+                          <Mail className="w-3 h-3 text-[#A87B51] shrink-0" />
+                          <span>{stf.email}</span>
+                        </p>
+                      )}
+                      {stf.phone && (
+                        <p className="text-stone-500 truncate flex items-center gap-1 text-[11px]">
+                          <Phone className="w-3 h-3 text-[#A87B51] shrink-0" />
+                          <span>{stf.phone}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bio & Specialties */}
+                  <div className="space-y-2 text-xs pt-1 border-t border-[#E8DFD8]">
+                    <p className="text-stone-600 line-clamp-2 italic text-[11px]">"{stf.bio}"</p>
+                    <div className="flex flex-wrap gap-1">
+                      {stf.specialties.map((spec, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-md bg-white border border-[#E3D8CE] text-[10px] font-medium text-[#68584E]">
+                          {spec}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Assigned Permissions Badges */}
+                  <div className="pt-2 border-t border-[#E8DFD8] space-y-1">
+                    <span className="block text-[10px] uppercase font-bold text-[#8A7568]">Granted Permissions ({assignedPerms.length})</span>
+                    <div className="flex flex-wrap gap-1">
+                      {ALL_PERMISSIONS.map((perm) => {
+                        const hasPerm = assignedPerms.includes(perm.key) || staffRole === 'admin';
+                        if (!hasPerm) return null;
+                        return (
+                          <span
+                            key={perm.key}
+                            title={perm.description}
+                            className="px-2 py-0.5 rounded-full bg-[#2C221E]/10 text-[#2C221E] text-[9px] font-bold flex items-center gap-1 border border-[#2C221E]/20"
+                          >
+                            <CheckSquare className="w-2.5 h-2.5 text-emerald-600" />
+                            <span>{perm.label.split(' ')[0]}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Edit Button */}
+                  <div className="pt-2 border-t border-[#E8DFD8] flex items-center justify-between">
+                    <span className="text-[10px] text-stone-400">ID: {stf.id}</span>
+                    <button
+                      disabled={!canManageStaff}
+                      onClick={() => {
+                        setEditingStaff(stf);
+                        setStaffForm({
+                          ...stf,
+                          role: stf.role || 'staff',
+                          email: stf.email || '',
+                          phone: stf.phone || '',
+                          permissions: stf.permissions || DEFAULT_ROLE_PERMISSIONS[stf.role || 'staff']
+                        });
+                        setIsStaffModalOpen(true);
+                      }}
+                      className={`font-bold text-xs underline cursor-pointer flex items-center gap-1 ${
+                        canManageStaff ? 'text-[#2C221E] hover:text-[#A87B51]' : 'text-stone-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Edit Staff & Permissions</span>
+                    </button>
+                  </div>
+
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        </div>
+      )}
+
+      {/* ROLES & SECURITY PERMISSIONS MATRIX TAB */}
+      {adminTab === 'security' && (
+        <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-8 shadow-sm">
+          
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E3D8CE]">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2C221E] text-[#D4AF37] text-xs font-bold uppercase mb-2">
+                <Key className="w-3.5 h-3.5" /> Security & Role-Based Access Control (RBAC)
+              </div>
+              <h3 className="font-serif text-2xl font-bold text-[#2C221E]">Role Permissions & Action Matrix</h3>
+              <p className="text-xs text-[#8A7568] mt-1 max-w-2xl">
+                Configure granular action permissions for each role. Staff members and managers can be granted custom access overrides while maintaining secure boundary checks across all endpoints.
+              </p>
+            </div>
+
+            {/* Current Active User Clearance Badge */}
+            <div className="p-4 rounded-2xl bg-[#FAF6F3] border border-[#E3D8CE] flex items-center gap-3 shrink-0">
+              <img
+                src={currentUser?.avatar_url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300'}
+                alt="Active User"
+                className="w-10 h-10 rounded-full object-cover border-2 border-[#D4AF37]"
+              />
+              <div className="text-xs">
+                <p className="font-bold text-[#2C221E]">{currentUser?.full_name || 'Active Admin'}</p>
+                <p className="text-[10px] text-[#A87B51] font-semibold uppercase">
+                  Role: <span className="font-extrabold">{currentUser?.role || 'Admin'}</span>
+                </p>
+                <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-0.5">
+                  <CheckCircle2 className="w-3 h-3 inline" />
+                  {currentUser?.role === 'admin' ? 'Root Full Clearance' : `${(currentUser?.permissions || []).length} Granted Actions`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Role Matrix Table */}
+          <div className="space-y-4">
+            <h4 className="font-serif text-lg font-bold text-[#2C221E]">Global Role Permission Matrix</h4>
+            <div className="overflow-x-auto rounded-2xl border border-[#E3D8CE]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#2C221E] text-white">
+                  <tr>
+                    <th className="p-3.5 font-bold uppercase tracking-wider text-[10px] min-w-[220px]">Permission Action</th>
+                    <th className="p-3.5 font-bold uppercase tracking-wider text-[10px] text-center w-28">Customer</th>
+                    <th className="p-3.5 font-bold uppercase tracking-wider text-[10px] text-center w-32 bg-amber-900/40 text-amber-200">Staff Role</th>
+                    <th className="p-3.5 font-bold uppercase tracking-wider text-[10px] text-center w-36 bg-purple-900/40 text-purple-200">Manager Role</th>
+                    <th className="p-3.5 font-bold uppercase tracking-wider text-[10px] text-center w-36 bg-[#D4AF37]/20 text-[#D4AF37]">Owner / Admin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E3D8CE] bg-white">
+                  {ALL_PERMISSIONS.map((perm) => {
+                    const inStaff = DEFAULT_ROLE_PERMISSIONS.staff.includes(perm.key);
+                    const inManager = DEFAULT_ROLE_PERMISSIONS.manager.includes(perm.key);
+                    const inAdmin = DEFAULT_ROLE_PERMISSIONS.admin.includes(perm.key);
+
+                    return (
+                      <tr key={perm.key} className="hover:bg-[#FAF6F3] transition-colors">
+                        <td className="p-3.5">
+                          <span className="font-bold text-[#2C221E] block text-xs">{perm.label}</span>
+                          <span className="text-[11px] text-[#8A7568] block mt-0.5">{perm.description}</span>
+                          <span className="inline-block mt-1 text-[9px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-mono">
+                            key: {perm.key}
+                          </span>
+                        </td>
+                        
+                        {/* Customer */}
+                        <td className="p-3.5 text-center bg-stone-50/50">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-rose-100 text-rose-600 mx-auto">
+                            <XCircle className="w-4 h-4" />
+                          </span>
+                        </td>
+
+                        {/* Staff */}
+                        <td className="p-3.5 text-center bg-amber-50/30">
+                          {inStaff ? (
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold mx-auto gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Allowed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold mx-auto gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              Denied
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Manager */}
+                        <td className="p-3.5 text-center bg-purple-50/30">
+                          {inManager ? (
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold mx-auto gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              Allowed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold mx-auto gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                              Denied
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Admin */}
+                        <td className="p-3.5 text-center bg-[#D4AF37]/10 font-bold">
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-[#2C221E] text-[#D4AF37] text-[10px] font-extrabold mx-auto gap-1 border border-[#D4AF37]/30">
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+                            Full Access
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Direct Staff Permissions Management Panel */}
+          <div className="space-y-4 pt-4 border-t border-[#E3D8CE]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-serif text-lg font-bold text-[#2C221E]">Staff Permissions Live Editor</h4>
+                <p className="text-xs text-[#8A7568]">Toggle specific action permissions directly for individual staff members.</p>
+              </div>
+              {!canManagePermissions && (
+                <span className="text-xs text-rose-600 font-bold flex items-center gap-1">
+                  <ShieldAlert className="w-4 h-4 inline" /> Permission Editing Restricted to Admin
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {staffList.map((stf) => {
+                const currentRole = stf.role || 'staff';
+                const currentPerms = stf.permissions || DEFAULT_ROLE_PERMISSIONS[currentRole] || [];
+
+                return (
+                  <div key={stf.id} className="p-4 rounded-2xl bg-[#FAF6F3] border border-[#E3D8CE] space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={stf.photo_url}
+                          alt={stf.full_name}
+                          className="w-10 h-10 rounded-full object-cover border border-[#E3D8CE]"
+                        />
+                        <div>
+                          <h5 className="font-serif font-bold text-sm text-[#2C221E]">{stf.full_name}</h5>
+                          <p className="text-[10px] text-[#8A7568]">
+                            Role: <span className="font-bold uppercase text-[#2C221E]">{currentRole}</span> • Email: {stf.email || 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={!canManagePermissions}
+                          onClick={() => {
+                            const defaultPerms = DEFAULT_ROLE_PERMISSIONS[currentRole] || [];
+                            onUpdateStaff(stf.id, { permissions: defaultPerms });
+                          }}
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+                            canManagePermissions
+                              ? 'bg-white border border-[#E3D8CE] text-[#8C6D58] hover:bg-[#FAF6F3] cursor-pointer'
+                              : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Reset to Role Defaults
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Permissions Toggle Row */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs pt-2 border-t border-[#E8DFD8]">
+                      {ALL_PERMISSIONS.map((perm) => {
+                        const isGranted = currentPerms.includes(perm.key) || currentRole === 'admin';
+
+                        return (
+                          <button
+                            key={perm.key}
+                            disabled={!canManagePermissions || currentRole === 'admin'}
+                            onClick={() => {
+                              let newPerms: PermissionKey[];
+                              if (currentPerms.includes(perm.key)) {
+                                newPerms = currentPerms.filter((p) => p !== perm.key);
+                              } else {
+                                newPerms = [...currentPerms, perm.key];
+                              }
+                              onUpdateStaff(stf.id, { permissions: newPerms });
+                            }}
+                            className={`p-2 rounded-xl text-[10px] font-bold border transition-all flex items-center justify-between gap-1 text-left ${
+                              isGranted
+                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                                : 'bg-white text-stone-400 border-stone-200 hover:border-stone-300'
+                            } ${canManagePermissions && currentRole !== 'admin' ? 'cursor-pointer' : 'cursor-default'}`}
+                          >
+                            <span className="truncate">{perm.label.split(' ')[0]}</span>
+                            {isGranted ? (
+                              <CheckSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            ) : (
+                              <Square className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -567,23 +950,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           className="w-full p-2 bg-white rounded-xl border border-[#E3D8CE] text-xs text-[#2C221E]"
                         />
                         <button
+                          disabled={!canManageReviews}
                           onClick={async () => {
                             await onRespondToReview(rev.id, responseText);
                             setRespondingReviewId(null);
                             setResponseText('');
                           }}
-                          className="px-3 py-1 bg-[#2C221E] text-white rounded-full text-xs font-bold"
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            canManageReviews
+                              ? 'bg-[#2C221E] text-white cursor-pointer'
+                              : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                          }`}
                         >
                           Send Response
                         </button>
                       </div>
                     ) : (
                       <button
+                        disabled={!canManageReviews}
                         onClick={() => {
                           setRespondingReviewId(rev.id);
                           setResponseText('');
                         }}
-                        className="text-[#2C221E] font-bold underline cursor-pointer"
+                        className={`font-bold underline text-xs ${
+                          canManageReviews ? 'text-[#2C221E] cursor-pointer' : 'text-stone-400 cursor-not-allowed'
+                        }`}
                       >
                         Reply to Review
                       </button>
@@ -663,13 +1054,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* SERVICE MODAL */}
       {isServiceModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-[#E3D8CE] shadow-2xl">
-            <h3 className="font-serif text-2xl font-bold text-[#2C221E]">
-              {editingService ? 'Edit Service' : 'Add New Service'}
-            </h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 border border-[#E3D8CE] shadow-2xl max-h-[90vh] flex flex-col my-auto overflow-hidden">
+            <div className="shrink-0 flex items-center justify-between pb-3 border-b border-[#E3D8CE]">
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#2C221E]">
+                {editingService ? 'Edit Service' : 'Add New Service'}
+              </h3>
+              <button
+                onClick={() => setIsServiceModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="overflow-y-auto flex-1 py-3 space-y-3 text-xs pr-1">
               <div>
                 <label className="block font-bold text-[#2C221E]">Name</label>
                 <input
@@ -713,48 +1112,255 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button onClick={() => setIsServiceModalOpen(false)} className="px-4 py-2 text-xs font-bold text-stone-500">Cancel</button>
-              <button onClick={handleSaveService} className="px-5 py-2 bg-[#2C221E] text-white text-xs font-bold rounded-full">Save Service</button>
+            <div className="shrink-0 flex items-center justify-end gap-2 pt-3 border-t border-[#E3D8CE]">
+              <button onClick={() => setIsServiceModalOpen(false)} className="px-4 py-2 text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer">Cancel</button>
+              <button onClick={handleSaveService} className="px-5 py-2 bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full cursor-pointer">Save Service</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* STAFF MODAL */}
+      {/* ENHANCED STAFF & ROLE PERMISSIONS MODAL */}
       {isStaffModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 border border-[#E3D8CE] shadow-2xl">
-            <h3 className="font-serif text-2xl font-bold text-[#2C221E]">
-              {editingStaff ? 'Edit Staff Profile' : 'Add New Staff Member'}
-            </h3>
-
-            <div className="space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-4 sm:p-6 border border-[#E3D8CE] shadow-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="shrink-0 flex items-center justify-between pb-3 border-b border-[#E3D8CE]">
               <div>
-                <label className="block font-bold text-[#2C221E]">Full Name</label>
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#2C221E]">
+                  {editingStaff ? 'Edit Staff & Permission Clearances' : 'Create Staff Profile & Assign Role'}
+                </h3>
+                <p className="text-xs text-[#8A7568]">Configure team credentials, avatar photo, role level, and action permissions.</p>
+              </div>
+              <button
+                onClick={() => setIsStaffModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Modal Body */}
+            <div className="overflow-y-auto flex-1 py-3 pr-1 space-y-5 text-xs">
+              
+              {/* Profile Avatar & Stock Selection */}
+              <div>
+                <label className="block font-bold text-[#2C221E] mb-1.5">Profile Picture & Avatar *</label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <img
+                    src={staffForm.photo_url || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400'}
+                    alt="Preview"
+                    referrerPolicy="no-referrer"
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-sm shrink-0"
+                  />
+                  <div className="flex-1 w-full space-y-2">
+                    <input
+                      type="url"
+                      value={staffForm.photo_url || ''}
+                      onChange={(e) => setStaffForm({ ...staffForm, photo_url: e.target.value })}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs text-[#2C221E]"
+                    />
+                    
+                    {/* Stock Avatar Presets */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                      <span className="text-[10px] text-[#8A7568] font-bold shrink-0">Quick Avatars:</span>
+                      {[
+                        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
+                        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400',
+                        'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400',
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+                      ].map((url, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setStaffForm({ ...staffForm, photo_url: url })}
+                          className="w-7 h-7 rounded-full overflow-hidden border border-[#E3D8CE] hover:border-[#D4AF37] cursor-pointer shrink-0"
+                        >
+                          <img src={url} alt={`Preset ${idx}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Name & Role */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-[#2C221E] mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={staffForm.full_name || ''}
+                    onChange={(e) => setStaffForm({ ...staffForm, full_name: e.target.value })}
+                    placeholder="e.g. Natasha Kumar"
+                    className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-[#2C221E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#2C221E] mb-1">Role Assignment *</label>
+                  <select
+                    value={staffForm.role || 'staff'}
+                    onChange={(e) => {
+                      const newRole = e.target.value as UserRole;
+                      setStaffForm({
+                        ...staffForm,
+                        role: newRole,
+                        permissions: DEFAULT_ROLE_PERMISSIONS[newRole] || []
+                      });
+                    }}
+                    className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] font-bold text-[#2C221E]"
+                  >
+                    <option value="staff">Staff Member (Stylist / Specialist)</option>
+                    <option value="manager">Manager (Operations & Staff Supervisor)</option>
+                    <option value="admin">Owner / Full Admin (Root Clearance)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Email & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-[#2C221E] mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={staffForm.email || ''}
+                    onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                    placeholder="e.g. natasha@monikazparlour.com"
+                    className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-[#2C221E]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#2C221E] mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={staffForm.phone || ''}
+                    onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+                    placeholder="e.g. +91 98765 43210"
+                    className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-[#2C221E]"
+                  />
+                </div>
+              </div>
+
+              {/* Specialties */}
+              <div>
+                <label className="block font-bold text-[#2C221E] mb-1">Specialties (comma separated)</label>
                 <input
                   type="text"
-                  value={staffForm.full_name}
-                  onChange={(e) => setStaffForm({ ...staffForm, full_name: e.target.value })}
-                  className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
+                  value={Array.isArray(staffForm.specialties) ? staffForm.specialties.join(', ') : ''}
+                  onChange={(e) => setStaffForm({
+                    ...staffForm,
+                    specialties: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                  })}
+                  placeholder="e.g. Balayage, Keratin Treatments, Bridal Glam"
+                  className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-[#2C221E]"
                 />
               </div>
 
+              {/* Bio */}
               <div>
-                <label className="block font-bold text-[#2C221E]">Bio</label>
+                <label className="block font-bold text-[#2C221E] mb-1">Bio & Experience Summary</label>
                 <textarea
                   rows={2}
-                  value={staffForm.bio}
+                  value={staffForm.bio || ''}
                   onChange={(e) => setStaffForm({ ...staffForm, bio: e.target.value })}
-                  className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
+                  placeholder="Certified Senior Stylist with expertise in organic hair treatments..."
+                  className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-[#2C221E]"
                 />
               </div>
+
+              {/* Granular Permissions Checkboxes */}
+              <div className="pt-3 border-t border-[#E3D8CE] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="block font-serif text-sm font-bold text-[#2C221E]">Granular Action Permissions</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const r = staffForm.role || 'staff';
+                      setStaffForm({ ...staffForm, permissions: DEFAULT_ROLE_PERMISSIONS[r] || [] });
+                    }}
+                    className="text-[10px] font-bold text-[#A87B51] underline cursor-pointer"
+                  >
+                    Reset to Role Defaults
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ALL_PERMISSIONS.map((perm) => {
+                    const currentPerms = staffForm.permissions || [];
+                    const isGranted = currentPerms.includes(perm.key) || staffForm.role === 'admin';
+
+                    return (
+                      <label
+                        key={perm.key}
+                        className={`p-3 rounded-2xl border text-xs flex items-start gap-2.5 transition-all cursor-pointer ${
+                          isGranted
+                            ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-bold'
+                            : 'bg-[#FAF6F3] border-[#E3D8CE] text-[#68584E]'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isGranted}
+                          disabled={staffForm.role === 'admin'}
+                          onChange={() => {
+                            let updated: PermissionKey[];
+                            if (currentPerms.includes(perm.key)) {
+                              updated = currentPerms.filter(p => p !== perm.key);
+                            } else {
+                              updated = [...currentPerms, perm.key];
+                            }
+                            setStaffForm({ ...staffForm, permissions: updated });
+                          }}
+                          className="mt-0.5 rounded border-[#E3D8CE] text-[#2C221E] focus:ring-0"
+                        />
+                        <div>
+                          <span className="block font-bold text-[#2C221E]">{perm.label}</span>
+                          <span className="block text-[10px] text-[#8A7568] font-normal leading-tight mt-0.5">{perm.description}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Active Toggle */}
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="is_active_staff"
+                  checked={staffForm.is_active ?? true}
+                  onChange={(e) => setStaffForm({ ...staffForm, is_active: e.target.checked })}
+                  className="rounded border-[#E3D8CE] text-[#2C221E]"
+                />
+                <label htmlFor="is_active_staff" className="font-bold text-[#2C221E]">
+                  Active Profile (Visible in Customer Appointment Booking)
+                </label>
+              </div>
+
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button onClick={() => setIsStaffModalOpen(false)} className="px-4 py-2 text-xs font-bold text-stone-500">Cancel</button>
-              <button onClick={handleSaveStaff} className="px-5 py-2 bg-[#2C221E] text-white text-xs font-bold rounded-full">Save Staff</button>
+            {/* Modal Footer */}
+            <div className="shrink-0 flex items-center justify-end gap-3 pt-3 border-t border-[#E3D8CE]">
+              <button
+                type="button"
+                onClick={() => setIsStaffModalOpen(false)}
+                className="px-5 py-2.5 text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveStaff}
+                className="px-6 py-2.5 bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full transition-all shadow-md cursor-pointer"
+              >
+                {editingStaff ? 'Save Staff & Permissions' : 'Create Staff Member'}
+              </button>
             </div>
+
           </div>
         </div>
       )}

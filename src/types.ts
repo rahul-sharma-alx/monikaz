@@ -2,7 +2,15 @@
  * Monikaz Parlour - Data Models & Types
  */
 
-export type UserRole = 'customer' | 'admin';
+export type UserRole = 'customer' | 'staff' | 'manager' | 'admin';
+
+export type PermissionKey =
+  | 'view_analytics'
+  | 'manage_bookings'
+  | 'manage_services'
+  | 'manage_staff'
+  | 'manage_reviews'
+  | 'manage_permissions';
 
 export interface Profile {
   id: string;
@@ -10,6 +18,7 @@ export interface Profile {
   phone: string;
   email: string;
   role: UserRole;
+  permissions?: PermissionKey[];
   avatar_url?: string;
   created_at: string;
 }
@@ -33,6 +42,10 @@ export interface Staff {
   specialties: string[];
   photo_url: string;
   is_active: boolean;
+  role?: UserRole;
+  email?: string;
+  phone?: string;
+  permissions?: PermissionKey[];
   rating?: number;
   reviews_count?: number;
   created_at?: string;

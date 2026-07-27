@@ -370,6 +370,7 @@ export default function App() {
 
           {activeTab === 'admin' && (
             <AdminDashboard
+              currentUser={currentUser}
               services={services}
               staffList={staffList}
               bookings={bookings}
