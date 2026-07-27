@@ -1,14 +1,15 @@
 import React from 'react';
-import { Scissors, MapPin, Phone, Mail, Clock, Instagram, Facebook, Heart } from 'lucide-react';
+import { Scissors, MapPin, Phone, Mail, Clock, Instagram, Facebook, Heart, MessageCircle } from 'lucide-react';
 import { Shop, Address, SocialMedia } from '../types';
 
 interface FooterProps {
   shop: Shop | null;
   addresses: Address[];
   socialMedia: SocialMedia[];
+  onNavigate?: (tab: 'about' | 'contact') => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia }) => {
+export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia, onNavigate }) => {
   const instagram = socialMedia.find(s => s.media_name === 'instagram');
   const facebook = socialMedia.find(s => s.media_name === 'facebook');
   const whatsapp = socialMedia.find(s => s.media_name === 'whatsapp');
@@ -41,6 +42,11 @@ export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia }) 
           </p>
 
           <div className="flex items-center gap-3 text-[#E5C380]">
+            {whatsapp && (
+              <a href={whatsapp.link} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-[#4A3933] hover:bg-green-600 hover:text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center">
+                <MessageCircle className="w-4 h-4" />
+              </a>
+            )}
             {instagram && (
               <a href={instagram.link} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-full bg-[#4A3933] hover:bg-[#A87B51] hover:text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <Instagram className="w-4 h-4" />
@@ -100,7 +106,22 @@ export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia }) 
 
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-[#3D2F2A] text-center text-xs text-[#A8988D] flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Quick Links */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 flex flex-wrap items-center justify-center gap-4 text-xs">
+        {onNavigate && (
+          <>
+            <button onClick={() => onNavigate('about')} className="text-[#C5B7AE] hover:text-white transition-colors cursor-pointer">About Us</button>
+            <span className="text-[#4A3933]">|</span>
+            <button onClick={() => onNavigate('contact')} className="text-[#C5B7AE] hover:text-white transition-colors cursor-pointer">Contact Us</button>
+            <span className="text-[#4A3933]">|</span>
+          </>
+        )}
+        <a href="#" className="text-[#C5B7AE] hover:text-white transition-colors">Privacy Policy</a>
+        <span className="text-[#4A3933]">|</span>
+        <a href="#" className="text-[#C5B7AE] hover:text-white transition-colors">Terms of Service</a>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 pt-6 border-t border-[#3D2F2A] text-center text-xs text-[#A8988D] flex flex-col sm:flex-row items-center justify-between gap-4">
         <p>© {new Date().getFullYear()} Monikaz Parlour. All rights reserved.</p>
         <p className="flex items-center justify-center gap-1">
           <span>Made with love for your beauty</span>

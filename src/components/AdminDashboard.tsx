@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { SUPABASE_SQL_SCHEMA, getTodayString } from '../data/initialData';
 import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, hasPermission } from '../lib/permissions';
+import { motion } from 'motion/react';
 
 interface AdminDashboardProps {
   currentUser: Profile | null;
@@ -55,7 +56,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   supabaseConfig,
   onSaveSupabaseCredentials,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'security' | 'supabase' | 'shop' | 'qr'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'leads' | 'security' | 'supabase' | 'shop' | 'qr'>(() => {
+    const saved = sessionStorage.getItem('monikaz_adminTab');
+    if (saved) return saved as any;
+    return 'overview';
+  });
+  const handleSetAdminTab = (tab: typeof adminTab) => {
+    sessionStorage.setItem('monikaz_adminTab', tab);
+    setAdminTab(tab);
+  };
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   // Security & Permission Checks
@@ -81,8 +90,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     price: 100,
     duration_minutes: 60,
     category: 'Hair & Styling',
-    image_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=800',
-    is_active: true
+    image_url: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=400',
+    is_active: true,
+    discount_percent: 0
   });
 
   // Staff Modal State
@@ -113,9 +123,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     .reduce((sum, b) => sum + b.service_price, 0);
 
   const completedCount = bookings.filter(b => b.status === 'completed').length;
+  const totalRevenue = bookings
+    .filter(b => b.status === 'completed' || b.status === 'confirmed' || b.status === 'in_progress')
+    .reduce((sum, b) => sum + b.service_price, 0);
+  const pendingLeads = bookings.filter(b => b.status === 'pending').length;
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(2)
     : '4.95';
+
+  // Service popularity
+  const serviceCounts: Record<string, number> = {};
+  bookings.forEach(b => { serviceCounts[b.service_name] = (serviceCounts[b.service_name] || 0) + 1; });
+  const topServices = Object.entries(serviceCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Staff performance
+  const staffCounts: Record<string, { count: number; revenue: number }> = {};
+  bookings.filter(b => b.status !== 'cancelled').forEach(b => {
+    if (!b.staff_name) return;
+    if (!staffCounts[b.staff_name]) staffCounts[b.staff_name] = { count: 0, revenue: 0 };
+    staffCounts[b.staff_name].count++;
+    staffCounts[b.staff_name].revenue += b.service_price;
+  });
+  const staffPerformance = Object.entries(staffCounts).sort((a, b) => b[1].count - a[1].count);
 
   // Filtered Bookings Table
   const filteredBookings = bookings.filter(b => {
@@ -168,7 +197,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <section className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
+    <section className="py-10 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto space-y-8">
       
       {/* Top Admin Banner */}
       <div className="bg-gradient-to-r from-[#2C221E] via-[#4A3933] to-[#2C221E] text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -201,6 +230,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'services', label: 'Services', icon: Scissors, count: services.length },
               { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
               { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
+              { id: 'leads', label: 'Leads', icon: User, count: pendingLeads },
               { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
               { id: 'shop', label: 'Shop Settings', icon: Store, count: null },
               { id: 'qr', label: 'Generate QR', icon: QrCode, count: null },
@@ -211,7 +241,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               return (
                 <button
                   key={item.id}
-                  onClick={() => setAdminTab(item.id as any)}
+                  onClick={() => handleSetAdminTab(item.id as any)}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 min-h-[44px] ${
                     isActive
                       ? 'bg-[#D4AF37] text-[#2C221E] shadow-xs font-extrabold'
@@ -277,17 +307,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { id: 'services', label: 'Services', icon: Scissors, count: services.length },
                 { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
                 { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
+                { id: 'leads', label: 'Leads', icon: User, count: pendingLeads },
                 { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
                 { id: 'shop', label: 'Shop Settings', icon: Store, count: null },
                 { id: 'qr', label: 'Generate QR', icon: QrCode, count: null },
                 { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
-              ].map((item) => {
+              ].map((item, i) => {
                 const Icon = item.icon;
                 const isActive = adminTab === item.id;
                 return (
-                  <button
+                  <motion.div
                     key={item.id}
-                    onClick={() => setAdminTab(item.id as any)}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <button
+                    onClick={() => handleSetAdminTab(item.id as any)}
                     title={isSidebarCollapsed ? `${item.label} ${item.count !== null ? `(${item.count})` : ''}` : undefined}
                     className={`w-full flex items-center rounded-2xl py-3 px-3 text-xs font-bold transition-all cursor-pointer ${
                       isSidebarCollapsed ? 'justify-center' : 'justify-between'
@@ -296,8 +332,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ? 'bg-[#D4AF37] text-[#2C221E] shadow-sm font-extrabold'
                         : 'text-stone-300 hover:bg-[#4A3933] hover:text-white'
                     }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
                       <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#2C221E]' : 'text-[#D4AF37]'}`} />
                       {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
                     </div>
@@ -311,7 +347,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {item.count}
                       </span>
                     )}
-                  </button>
+                    </button>
+                  </motion.div>
                 );
               })}
             </nav>
@@ -336,59 +373,150 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {adminTab === 'overview' && (
         <div className="space-y-8">
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8A7568] uppercase">Today's Appointments</span>
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Today's Bookings</span>
                 <Calendar className="w-5 h-5 text-[#A87B51]" />
               </div>
               <p className="font-serif text-3xl font-bold text-[#2C221E]">{todayBookings.length}</p>
-              <p className="text-[11px] text-stone-500">Scheduled for {todayStr}</p>
+              <p className="text-[10px] text-stone-500">{todayStr}</p>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8A7568] uppercase">Est. Today's Revenue</span>
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Today's Revenue</span>
                 <span className="w-5 h-5 text-emerald-600 font-serif font-bold text-lg flex items-center justify-center">₹</span>
               </div>
               <p className="font-serif text-3xl font-bold text-[#2C221E]">₹{todayRevenue}</p>
-              <p className="text-[11px] text-emerald-600 font-semibold">Active appointments value</p>
+              <p className="text-[10px] text-emerald-600 font-semibold">Active bookings</p>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8A7568] uppercase">Total Completed</span>
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Total Revenue</span>
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+              </div>
+              <p className="font-serif text-3xl font-bold text-[#2C221E]">₹{totalRevenue}</p>
+              <p className="text-[10px] text-stone-500">Across all bookings</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Pending Leads</span>
+                <User className="w-5 h-5 text-amber-600" />
+              </div>
+              <p className="font-serif text-3xl font-bold text-[#2C221E]">{pendingLeads}</p>
+              <p className="text-[10px] text-amber-600 font-semibold">Awaiting confirmation</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Staff</span>
+                <Users className="w-5 h-5 text-blue-600" />
+              </div>
+              <p className="font-serif text-3xl font-bold text-[#2C221E]">{staffList.filter(s => s.is_active).length}</p>
+              <p className="text-[10px] text-stone-500">Active team members</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Services</span>
+                <Scissors className="w-5 h-5 text-[#A87B51]" />
+              </div>
+              <p className="font-serif text-3xl font-bold text-[#2C221E]">{services.filter(s => s.is_active).length}</p>
+              <p className="text-[10px] text-stone-500">Active services</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Completed</span>
                 <CheckCircle2 className="w-5 h-5 text-blue-600" />
               </div>
               <p className="font-serif text-3xl font-bold text-[#2C221E]">{completedCount}</p>
-              <p className="text-[11px] text-stone-500">Successful parlour sessions</p>
+              <p className="text-[10px] text-stone-500">Successful sessions</p>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
+            <div className="bg-white p-5 rounded-3xl border border-[#E3D8CE] shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#8A7568] uppercase">Average Salon Rating</span>
+                <span className="text-[11px] font-bold text-[#8A7568] uppercase">Avg Rating</span>
                 <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
               </div>
               <p className="font-serif text-3xl font-bold text-[#2C221E]">{avgRating} ★</p>
-              <p className="text-[11px] text-stone-500">From {reviews.length} verified reviews</p>
+              <p className="text-[10px] text-stone-500">From {reviews.length} reviews</p>
             </div>
           </div>
 
-          {/* Today's Schedule Quick View */}
+          {/* Top Services & Staff Performance */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Services */}
+            <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-4">
+              <h3 className="font-serif text-lg font-bold text-[#2C221E]">Popular Services</h3>
+              {topServices.length === 0 ? (
+                <p className="text-xs text-stone-500 italic">No bookings yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {topServices.map(([name, count], i) => {
+                    const maxCount = topServices[0][1];
+                    return (
+                      <div key={name}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-semibold text-[#2C221E] truncate mr-2">{name}</span>
+                          <span className="text-[#A87B51] font-bold">{count} bookings</span>
+                        </div>
+                        <div className="w-full bg-[#F2ECE6] rounded-full h-2">
+                          <div className="bg-[#A87B51] rounded-full h-2 transition-all" style={{ width: `${(count / maxCount) * 100}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Staff Performance */}
+            <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-4">
+              <h3 className="font-serif text-lg font-bold text-[#2C221E]">Staff Performance</h3>
+              {staffPerformance.length === 0 ? (
+                <p className="text-xs text-stone-500 italic">No data yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {staffPerformance.map(([name, data]) => {
+                    const maxCount = staffPerformance[0][1].count;
+                    return (
+                      <div key={name}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="font-semibold text-[#2C221E]">{name}</span>
+                          <span className="text-stone-500">{data.count} bookings • ₹{data.revenue}</span>
+                        </div>
+                        <div className="w-full bg-[#F2ECE6] rounded-full h-2">
+                          <div className="bg-[#D4AF37] rounded-full h-2 transition-all" style={{ width: `${(data.count / maxCount) * 100}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Today's Schedule */}
           <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-4">
-            <h3 className="font-serif text-xl font-bold text-[#2C221E]">Today's Appointment Schedule</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-serif text-xl font-bold text-[#2C221E]">Today's Schedule</h3>
+              <button onClick={() => handleSetAdminTab('bookings')} className="text-xs font-bold text-[#A87B51] underline cursor-pointer">View All</button>
+            </div>
             {todayBookings.length === 0 ? (
               <p className="text-xs text-stone-500 italic py-4">No appointments scheduled for today.</p>
             ) : (
               <div className="divide-y divide-[#F2ECE6]">
                 {todayBookings.map((b) => (
                   <div key={b.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div>
-                      <span className="font-bold text-[#2C221E]">{b.start_time} — {b.end_time}: </span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-[#2C221E] min-w-[80px]">{b.start_time} — {b.end_time}</span>
                       <span className="font-serif font-bold text-[#A87B51]">{b.service_name}</span>
-                      <span className="text-stone-500 ml-2">({b.customer_name})</span>
+                      <span className="text-stone-500">({b.customer_name})</span>
                     </div>
-
                     <div className="flex items-center gap-3">
                       <span className="text-stone-500">Stylist: {b.staff_name}</span>
                       <select
@@ -533,9 +661,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] uppercase font-bold text-[#A87B51]">{srv.category}</span>
-                    <span className="font-bold text-[#2C221E]">₹{srv.price}</span>
+                    <span className="font-bold text-[#2C221E]">
+                      {srv.discount_percent && srv.discount_percent > 0 ? (
+                        <span>₹{Math.round(srv.price * (1 - srv.discount_percent / 100))} <span className="text-[10px] text-stone-400 line-through">₹{srv.price}</span></span>
+                      ) : `₹${srv.price}`}
+                    </span>
                   </div>
                   <h4 className="font-serif text-lg font-bold text-[#2C221E] mt-1">{srv.name}</h4>
+                  {srv.discount_percent && srv.discount_percent > 0 && (
+                    <span className="inline-block text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">{srv.discount_percent}% OFF</span>
+                  )}
                   <p className="text-xs text-[#68584E] mt-1 line-clamp-2">{srv.description}</p>
                 </div>
 
@@ -554,6 +689,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Price History */}
+          <div className="bg-[#FAF6F3] rounded-2xl p-4 border border-[#E3D8CE]">
+            <h4 className="font-serif text-lg font-bold text-[#2C221E] mb-2">Price & Discount History</h4>
+            <PriceHistoryView />
           </div>
         </div>
       )}
@@ -942,6 +1083,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+      {/* LEADS TAB */}
+      {adminTab === 'leads' && (
+        <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-6">
+          <h3 className="font-serif text-2xl font-bold text-[#2C221E]">Leads & Pending Bookings</h3>
+          <p className="text-xs text-[#68584E]">Customers who booked but haven't been confirmed yet. Follow up to convert them.</p>
+          {bookings.filter(b => b.status === 'pending').length === 0 ? (
+            <p className="text-xs text-stone-500 italic py-6">No pending leads. All bookings are confirmed or completed.</p>
+          ) : (
+            <div className="space-y-3">
+              {bookings.filter(b => b.status === 'pending').map(b => (
+                <div key={b.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
+                  <div className="text-xs space-y-1">
+                    <p className="font-bold text-[#2C221E]">{b.customer_name}</p>
+                    <p className="text-stone-500">{b.service_name} — {b.booking_date} at {b.start_time}</p>
+                    <p className="text-stone-400">Stylist: {b.staff_name} • ₹{b.service_price}</p>
+                    {b.notes && <p className="text-amber-700 italic">Note: {b.notes}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={b.status}
+                      onChange={(e) => onUpdateBookingStatus(b.id, e.target.value as BookingStatus)}
+                      className="bg-white border border-[#E3D8CE] rounded-full px-3 py-1.5 font-semibold text-xs text-[#2C221E]"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirm</option>
+                      <option value="cancelled">Cancel</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* REVIEWS TAB */}
       {adminTab === 'reviews' && (
         <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] space-y-6">
@@ -1169,6 +1345,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#2C221E]">Discount % (0 = no offer)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={serviceForm.discount_percent ?? 0}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') { setServiceForm({ ...serviceForm, discount_percent: 0 }); return; }
+                    let val = parseInt(raw, 10);
+                    if (isNaN(val)) val = 0;
+                    setServiceForm({ ...serviceForm, discount_percent: Math.max(0, Math.min(100, val)) });
+                  }}
+                  className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#2C221E]">Image URL</label>
+                <input
+                  type="text"
+                  value={serviceForm.image_url}
+                  onChange={(e) => setServiceForm({ ...serviceForm, image_url: e.target.value })}
+                  className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
+                  placeholder="https://images.unsplash.com/photo-..."
+                />
+                {serviceForm.image_url && (
+                  <img src={serviceForm.image_url} alt="preview" className="mt-2 w-full h-32 object-cover rounded-xl border border-[#E3D8CE]" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                )}
               </div>
             </div>
 
@@ -1561,6 +1769,30 @@ function QrGenerator() {
           </ol>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Price History Sub-Component ──
+function PriceHistoryView() {
+  const [history, setHistory] = useState<import('../types').PriceHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  React.useEffect(() => {
+    fetch('/api/price-history').then(r => r.json()).then(d => { setHistory(d); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+  if (loading) return <p className="text-xs text-stone-500 italic">Loading price history...</p>;
+  if (history.length === 0) return <p className="text-xs text-stone-500 italic">No price changes recorded yet.</p>;
+  return (
+    <div className="max-h-48 overflow-y-auto space-y-1.5 text-xs">
+      {history.slice(0, 50).map(h => (
+        <div key={h.id} className="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-[#E3D8CE]">
+          <span className="font-bold text-[#2C221E] truncate">{h.service_id}</span>
+          <span>₹{h.price}</span>
+          {h.discount_percent > 0 && <span className="text-emerald-600 font-bold">{h.discount_percent}% OFF</span>}
+          <span className="text-[#A87B51] font-bold">₹{h.after_discount}</span>
+          <span className="text-stone-400 whitespace-nowrap">{new Date(h.changed_at).toLocaleDateString()}</span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Profile, UserRole } from '../types';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail, getSupabaseClient } from '../lib/supabase';
-import { ShieldCheck, User, Mail, Lock, Phone, Sparkles, CheckCircle2, AlertCircle, ArrowRight, LogOut, KeyRound } from 'lucide-react';
+import { ShieldCheck, User, Mail, Lock, Phone, Sparkles, CheckCircle2, AlertCircle, ArrowRight, LogOut, KeyRound, LogIn } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface AuthModalProps {
   onLogin: (profile: Profile) => void;
   onLogout: () => void;
   requiredRoleForAdmin?: boolean;
+  onOpenProfile?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -19,8 +20,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogin,
   onLogout,
   requiredRoleForAdmin = false,
+  onOpenProfile,
 }) => {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [demoRole, setDemoRole] = useState('customer');
   const [role, setRole] = useState<UserRole>('customer');
 
   // Form State
@@ -157,7 +160,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-md w-full border border-[#E3D8CE] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-8">
+      <div className="bg-white rounded-3xl max-w-md w-full border border-[#E3D8CE] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col my-auto">
         
         {/* Header */}
         <div className="bg-[#2C221E] text-white p-6 relative">
@@ -195,8 +198,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </p>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-5">
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 p-6 space-y-5 text-xs">
           
           {/* Message Banner */}
           {message && (
@@ -236,6 +239,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               <div className="pt-2 flex flex-col gap-2">
+                {onOpenProfile && (
+                  <button
+                    onClick={() => { onOpenProfile(); onClose(); }}
+                    className="w-full py-3 rounded-full bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 min-h-[44px]"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Edit Profile</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onLogout();
@@ -409,68 +421,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </>
                 )}
               </button>
-
-              {/* Demo Logins Divider */}
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#E3D8CE]" /></div>
-                <div className="relative flex justify-center text-[10px] uppercase font-bold text-[#8A7568] bg-white px-2">
-                  Or One-Click Demo Access
-                </div>
-              </div>
-
-              {/* Demo Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={handleDemoCustomerLogin}
-                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#2C221E] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
-                >
-                  <div>
-                    <span className="block font-bold text-[#2C221E]">Customer</span>
-                    <span className="block text-[9px] text-[#8A7568]">Priya S.</span>
-                  </div>
-                  <User className="w-3.5 h-3.5 text-[#A87B51]" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDemoStaffLogin}
-                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#2C221E] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
-                >
-                  <div>
-                    <span className="block font-bold text-[#2C221E]">Staff Role</span>
-                    <span className="block text-[9px] text-[#8A7568]">Elena R.</span>
-                  </div>
-                  <User className="w-3.5 h-3.5 text-[#A87B51]" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDemoManagerLogin}
-                  className="py-2 px-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F2ECE6] border border-[#E3D8CE] text-[#8C6D58] text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
-                >
-                  <div>
-                    <span className="block font-bold text-[#8C6D58]">Manager</span>
-                    <span className="block text-[9px] text-[#8A7568]">Aisha P.</span>
-                  </div>
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C6D58]" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDemoAdminLogin}
-                  className="py-2 px-2.5 rounded-xl bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-semibold cursor-pointer text-left min-h-[44px] flex items-center justify-between"
-                >
-                  <div>
-                    <span className="block font-bold text-[#D4AF37]">Owner/Admin</span>
-                    <span className="block text-[9px] text-stone-300">Monika S.</span>
-                  </div>
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                </button>
-              </div>
-
-              {/* Switch Modes */}
-              <div className="text-center pt-2 text-xs text-[#68584E]">
+<div className="text-center pt-2 text-xs text-[#68584E]">
                 {mode === 'login' ? (
                   <p>
                     Don't have an account?{' '}
@@ -495,6 +446,67 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </p>
                 )}
               </div>
+              {/* Demo Logins Divider */}
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#E3D8CE]" /></div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold text-[#8A7568] bg-white px-2">
+                  Quick Demo Access
+                </div>
+              </div>
+
+              {/* Single Demo Login by Role */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <select
+                  value={demoRole}
+                  onChange={e => setDemoRole(e.target.value)}
+                  className="flex-1 p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs font-semibold min-h-[44px]"
+                >
+                  <option value="customer">Customer — Priya Sharma</option>
+                  <option value="staff">Staff — Neha Kapoor</option>
+                  <option value="manager">Manager — Aisha Patel</option>
+                  <option value="admin">Owner/Admin — Monika Sharma</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (demoRole === 'customer') handleDemoCustomerLogin();
+                    else if (demoRole === 'staff') handleDemoStaffLogin();
+                    else if (demoRole === 'manager') handleDemoManagerLogin();
+                    else handleDemoAdminLogin();
+                  }}
+                  className="px-5 py-2.5 min-h-[44px] bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Login as Demo
+                </button>
+              </div>
+
+              {/* Switch Modes */}
+              {/* <div className="text-center pt-2 text-xs text-[#68584E]">
+                {mode === 'login' ? (
+                  <p>
+                    Don't have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setMode('signup')}
+                      className="font-bold text-[#A87B51] underline cursor-pointer"
+                    >
+                      Sign Up Now
+                    </button>
+                  </p>
+                ) : (
+                  <p>
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setMode('login')}
+                      className="font-bold text-[#A87B51] underline cursor-pointer"
+                    >
+                      Log In
+                    </button>
+                  </p>
+                )}
+              </div> */}
 
             </form>
           )}

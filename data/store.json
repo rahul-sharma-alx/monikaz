@@ -46,14 +46,15 @@
     },
     {
       "id": "srv-1",
-      "name": "Monikaz Royal Hair Keratin & Gloss",
-      "description": "Deep hair reconstruction treatment using organic keratin, leaving hair silky smooth, frizz-free, and brilliantly shiny for up to 4 months.",
+      "name": "Keratin & Gloss Hair Treatment",
+      "description": "Deep hair repair with organic keratin. Makes hair silky, smooth and frizz-free for up to 4 months.",
       "price": 1800,
       "duration_minutes": 90,
       "category": "Hair & Styling",
       "image_url": "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800",
       "is_active": true,
-      "created_at": "2026-07-27T13:10:56.715Z"
+      "created_at": "2026-07-27T13:10:56.715Z",
+      "discount_percent": 20
     },
     {
       "id": "srv-2",
@@ -84,7 +85,7 @@
       "price": 1250,
       "duration_minutes": 60,
       "category": "Facial & Skincare",
-      "image_url": "https://images.unsplash.com/photo-1512290900673-70020083049b?auto=format&fit=crop&q=80&w=800",
+      "image_url": "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&q=80&w=800",
       "is_active": true,
       "created_at": "2026-07-27T13:10:56.715Z"
     },
@@ -236,6 +237,25 @@
   ],
   "bookings": [
     {
+      "id": "bk-1785173440400",
+      "customer_id": "user-c1",
+      "customer_name": "Ananya Roy",
+      "customer_phone": "+91 98765 12345",
+      "customer_email": "ananya.roy.google@gmail.com",
+      "service_id": "srv-1",
+      "service_name": "Monikaz Royal Hair Keratin & Gloss",
+      "service_price": 1800,
+      "service_duration": 90,
+      "staff_name": "Any Available Stylist",
+      "booking_date": "2026-07-27",
+      "start_time": "11:00",
+      "end_time": "12:30",
+      "status": "pending",
+      "notes": "Senstive skin",
+      "created_at": "2026-07-27T17:30:40.400Z",
+      "updated_at": "2026-07-27T17:56:01.634Z"
+    },
+    {
       "id": "bk-101",
       "customer_id": "user-c1",
       "customer_name": "Sophia Williams",
@@ -250,10 +270,10 @@
       "booking_date": "2026-07-27",
       "start_time": "11:00",
       "end_time": "12:15",
-      "status": "in_progress",
+      "status": "completed",
       "notes": "Please use extra sensitive skin moisturizer.",
       "created_at": "2026-07-27T09:10:56.715Z",
-      "updated_at": "2026-07-27T12:40:56.715Z"
+      "updated_at": "2026-07-27T17:55:37.933Z"
     },
     {
       "id": "bk-102",
@@ -310,10 +330,10 @@
       "booking_date": "2026-07-30",
       "start_time": "10:00",
       "end_time": "12:30",
-      "status": "pending",
+      "status": "cancelled",
       "notes": "Bridal trial booking.",
       "created_at": "2026-07-27T11:10:56.715Z",
-      "updated_at": "2026-07-27T11:10:56.715Z"
+      "updated_at": "2026-07-27T18:01:39.959Z"
     }
   ],
   "reviews": [
@@ -402,5 +422,102 @@
       "created_at": "2025-07-27T13:10:56.715Z"
     }
   ],
-  "emailLogs": []
+  "emailLogs": [
+    {
+      "id": "email-1785175299960",
+      "to": "isabella.vance@example.com",
+      "subject": "Booking Status Update: CANCELLED - Monikaz Parlour",
+      "body": "Hello Isabella Vance,\n\nYour appointment #bk-104 for \"Couture Bridal Glam & Hair Styling\" on 2026-07-30 is now status: cancelled.\n\nSee you at Monikaz Parlour!",
+      "sent_at": "2026-07-27T18:01:39.962Z"
+    },
+    {
+      "id": "email-1785174961634",
+      "to": "ananya.roy.google@gmail.com",
+      "subject": "Booking Status Update: PENDING - Monikaz Parlour",
+      "body": "Hello Ananya Roy,\n\nYour appointment #bk-1785173440400 for \"Monikaz Royal Hair Keratin & Gloss\" on 2026-07-27 is now status: pending.\n\nSee you at Monikaz Parlour!",
+      "sent_at": "2026-07-27T17:56:01.634Z"
+    },
+    {
+      "id": "email-1785174947308",
+      "to": "ananya.roy.google@gmail.com",
+      "subject": "Booking Status Update: COMPLETED - Monikaz Parlour",
+      "body": "Hello Ananya Roy,\n\nYour appointment #bk-1785173440400 for \"Monikaz Royal Hair Keratin & Gloss\" on 2026-07-27 is now status: completed.\n\nSee you at Monikaz Parlour!",
+      "sent_at": "2026-07-27T17:55:47.308Z"
+    },
+    {
+      "id": "email-1785174937933",
+      "to": "sophia.w@example.com",
+      "subject": "Booking Status Update: COMPLETED - Monikaz Parlour",
+      "body": "Hello Sophia Williams,\n\nYour appointment #bk-101 for \"Signature 24K Gold Glow Facial\" on 2026-07-27 is now status: completed.\n\nSee you at Monikaz Parlour!",
+      "sent_at": "2026-07-27T17:55:37.934Z"
+    },
+    {
+      "id": "email-1785174917223",
+      "to": "ananya.roy.google@gmail.com",
+      "subject": "Booking Status Update: CONFIRMED - Monikaz Parlour",
+      "body": "Hello Ananya Roy,\n\nYour appointment #bk-1785173440400 for \"Monikaz Royal Hair Keratin & Gloss\" on 2026-07-27 is now status: confirmed.\n\nSee you at Monikaz Parlour!",
+      "sent_at": "2026-07-27T17:55:17.223Z"
+    },
+    {
+      "id": "email-1785173440400",
+      "to": "ananya.roy.google@gmail.com",
+      "subject": "Booking Request Received - Monikaz Parlour (#bk-1785173440400)",
+      "body": "Hello Ananya Roy,\n\nYour appointment for \"Monikaz Royal Hair Keratin & Gloss\" on 2026-07-27 at 11:00 with Any Available Stylist has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!",
+      "sent_at": "2026-07-27T17:30:40.400Z"
+    }
+  ],
+  "shops": [
+    {
+      "id": "shop-1",
+      "name": "Monikaz Parlour",
+      "logo_url": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200"
+    }
+  ],
+  "addresses": [
+    {
+      "id": "addr-1",
+      "shop_id": "shop-1",
+      "address": "123, Linking Road, Bandra West, Mumbai - 400050"
+    }
+  ],
+  "social_media": [
+    {
+      "id": "sm-1",
+      "shop_id": "shop-1",
+      "media_name": "instagram",
+      "link": "https://instagram.com/monikazparlour"
+    },
+    {
+      "id": "sm-2",
+      "shop_id": "shop-1",
+      "media_name": "facebook",
+      "link": "https://facebook.com/monikazparlour"
+    }
+  ],
+  "priceHistory": [
+    {
+      "id": "ph-1785180684834",
+      "service_id": "srv-1",
+      "price": 1800,
+      "discount_percent": 20,
+      "after_discount": 1440,
+      "changed_at": "2026-07-27T19:31:24.834Z"
+    },
+    {
+      "id": "ph-1785179693352",
+      "service_id": "srv-1",
+      "price": 1800,
+      "discount_percent": 20,
+      "after_discount": 1440,
+      "changed_at": "2026-07-27T19:14:53.352Z"
+    },
+    {
+      "id": "ph-1785179671635",
+      "service_id": "srv-1",
+      "price": 1800,
+      "discount_percent": 10,
+      "after_discount": 1620,
+      "changed_at": "2026-07-27T19:14:31.635Z"
+    }
+  ]
 }

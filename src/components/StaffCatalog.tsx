@@ -1,6 +1,7 @@
 import React from 'react';
 import { Staff } from '../types';
 import { Star, Sparkles, Award, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface StaffCatalogProps {
   staffList: Staff[];
@@ -20,11 +21,19 @@ export const StaffCatalog: React.FC<StaffCatalogProps> = ({ staffList, onBookWit
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-50px' }}
+        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+      >
         {staffList.filter(s => s.is_active).map((staff) => (
-          <div
+          <motion.div
             key={staff.id}
-            className="bg-white rounded-3xl overflow-hidden border border-[#E3D8CE] shadow-2xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+            variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } } }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            className="bg-white rounded-3xl overflow-hidden border border-[#E3D8CE] shadow-2xs hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between"
           >
             <div>
               {/* Image & Rating */}
@@ -87,9 +96,9 @@ export const StaffCatalog: React.FC<StaffCatalogProps> = ({ staffList, onBookWit
                 <span>Book Appointment with {staff.full_name.split(' ')[0]}</span>
               </button>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 };

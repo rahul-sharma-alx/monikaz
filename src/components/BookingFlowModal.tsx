@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Service, Staff, Booking } from '../types';
-import { Calendar as CalendarIcon, Clock, User, CheckCircle, AlertCircle, Sparkles, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Service, Staff, Booking, Profile, Shop, SocialMedia, Address } from '../types';
+import { Calendar as CalendarIcon, Clock, User, CheckCircle, AlertCircle, Sparkles, ChevronRight, ArrowLeft, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { getTodayString } from '../data/initialData';
 
 interface BookingFlowModalProps {
@@ -11,7 +11,11 @@ interface BookingFlowModalProps {
   existingBookings: Booking[];
   preselectedService?: Service | null;
   preselectedStaff?: Staff | null;
+  currentUser?: Profile | null;
   onBookingSubmitted: (bookingData: Partial<Booking>) => Promise<void>;
+  shop?: Shop | null;
+  socialMedia?: SocialMedia[];
+  addresses?: Address[];
 }
 
 const TIME_SLOTS = [
@@ -39,7 +43,11 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
   existingBookings,
   preselectedService,
   preselectedStaff,
+  currentUser,
   onBookingSubmitted,
+  shop,
+  socialMedia,
+  addresses,
 }) => {
   const [step, setStep] = useState<number>(1);
 
@@ -116,6 +124,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
 
     try {
       await onBookingSubmitted({
+        customer_id: currentUser?.id || undefined,
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_email: customerEmail,
@@ -473,6 +482,39 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
                 <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>An instant confirmation email with your booking code will be sent immediately upon reservation.</span>
               </div>
+
+              {/* Shop Contact */}
+              {shop && (
+                <div className="bg-white p-4 rounded-2xl border border-[#E3D8CE] space-y-2.5 text-xs">
+                  <h5 className="font-serif font-bold text-[#2C221E] text-sm flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-[#A87B51]" /> {shop.name}
+                  </h5>
+                  {addresses && addresses.length > 0 && (
+                    <p className="text-[#68584E] flex items-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#A87B51] shrink-0 mt-0.5" />
+                      <span>{addresses[0].address}</span>
+                    </p>
+                  )}
+                  {socialMedia && socialMedia.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {socialMedia.map(sm => (
+                        <a
+                          key={sm.id}
+                          href={sm.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] font-medium text-[#2C221E] hover:bg-[#E8DFD8] transition-colors"
+                        >
+                          {sm.media_name === 'whatsapp' && <MessageCircle className="w-3.5 h-3.5 text-green-600" />}
+                          {sm.media_name === 'instagram' && <span className="text-pink-600 text-sm">📷</span>}
+                          {sm.media_name === 'facebook' && <span className="text-blue-600 text-sm">f</span>}
+                          <span className="capitalize">{sm.media_name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

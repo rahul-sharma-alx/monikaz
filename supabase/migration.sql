@@ -110,6 +110,18 @@ create table if not exists public.social_media (
   link text not null
 );
 
+-- Price history table for tracking discount/price changes
+create table if not exists public.price_history (
+  id text primary key,
+  service_id text not null references public.services(id) on delete cascade,
+  shop_id text references public.shops(id) on delete set null,
+  updated_by uuid references auth.users(id) on delete set null,
+  price numeric(10,2) not null,
+  discount_percent int not null default 0,
+  after_discount numeric(10,2) not null,
+  changed_at timestamptz not null default now()
+);
+
 -- ── ROW LEVEL SECURITY ──
 -- ponytail: fully permissive for MVP — the app code enforces business rules.
 -- Lock down auth.uid() checks once real auth is in place.

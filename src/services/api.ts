@@ -1,5 +1,22 @@
-import { Service, Staff, Booking, Review, Profile, BookingStatus, Shop, Address, SocialMedia } from '../types';
-import { getSupabaseClient } from '../lib/supabase';
+import { Service, Staff, Booking, Review, Profile, BookingStatus, Shop, Address, SocialMedia, PriceHistory } from '../types';
+import { getSupabaseClient, getCurrentUser } from '../lib/supabase';
+
+// ponytail: in-memory cache with 3s TTL — no stale-while-revalidate library needed
+const cache = new Map<string, { data: any; staleAt: number }>();
+const CACHE_TTL = 3000;
+function getCached<T>(key: string): T | undefined {
+  const entry = cache.get(key);
+  if (entry && Date.now() < entry.staleAt) return entry.data as T;
+  return undefined;
+}
+function setCache(key: string, data: any) {
+  cache.set(key, { data, staleAt: Date.now() + CACHE_TTL });
+}
+function invalidateCache(prefix: string) {
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
+}
 
 // Helper for HTTP requests
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
@@ -21,18 +38,26 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   // Services
   async getServices(): Promise<Service[]> {
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      const { data, error } = await supabase.from('services').select('*').order('created_at', { ascending: false });
-      if (!error && data) return data as Service[];
+    const cached = getCached<Service[]>('services');
+    if (cached) {
+      fetchApi<Service[]>('/api/services').then(d => setCache('services', d)).catch(() => {});
+      return cached;
     }
-    return fetchApi<Service[]>('/api/services');
+    const supabase = getSupabaseClient();
+    if (supabase && getCurrentUser()) {
+      const { data, error } = await supabase.from('services').select('*').order('created_at', { ascending: false });
+      if (!error && data) { setCache('services', data); return data as Service[]; }
+    }
+    const data = await fetchApi<Service[]>('/api/services');
+    setCache('services', data);
+    return data;
   },
 
   async createService(serviceData: Partial<Service>): Promise<Service> {
+    invalidateCache('services');
     const payload = { id: `srv-${Date.now()}`, ...serviceData };
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('services').insert([payload]).select().single();
       if (!error && data) return data as Service;
     }
@@ -43,20 +68,23 @@ export const api = {
   },
 
   async updateService(id: string, serviceData: Partial<Service>): Promise<Service> {
+    invalidateCache('services');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    const user = getCurrentUser();
+    if (supabase && user) {
       const { data, error } = await supabase.from('services').update(serviceData).eq('id', id).select().single();
       if (!error && data) return data as Service;
     }
     return fetchApi<Service>(`/api/services/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(serviceData),
+      body: JSON.stringify({ ...serviceData, updated_by: user?.id }),
     });
   },
 
   async deleteService(id: string): Promise<void> {
+    invalidateCache('services');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       await supabase.from('services').delete().eq('id', id);
       return;
     }
@@ -65,17 +93,25 @@ export const api = {
 
   // Staff
   async getStaff(): Promise<Staff[]> {
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: true });
-      if (!error && data) return data as Staff[];
+    const cached = getCached<Staff[]>('staff');
+    if (cached) {
+      fetchApi<Staff[]>('/api/staff').then(d => setCache('staff', d)).catch(() => {});
+      return cached;
     }
-    return fetchApi<Staff[]>('/api/staff');
+    const supabase = getSupabaseClient();
+    if (supabase && getCurrentUser()) {
+      const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: true });
+      if (!error && data) { setCache('staff', data); return data as Staff[]; }
+    }
+    const data = await fetchApi<Staff[]>('/api/staff');
+    setCache('staff', data);
+    return data;
   },
 
   async createStaff(staffData: Partial<Staff>): Promise<Staff> {
+    invalidateCache('staff');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('staff').insert([staffData]).select().single();
       if (!error && data) return data as Staff;
     }
@@ -86,8 +122,9 @@ export const api = {
   },
 
   async updateStaff(id: string, staffData: Partial<Staff>): Promise<Staff> {
+    invalidateCache('staff');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('staff').update(staffData).eq('id', id).select().single();
       if (!error && data) return data as Staff;
     }
@@ -99,27 +136,45 @@ export const api = {
 
   // Bookings
   async getBookings(currentUser?: Profile | null, params?: { staff_id?: string; date?: string; status?: string }): Promise<Booking[]> {
+    const cacheKey = `bookings-${currentUser?.id || 'anon'}-${JSON.stringify(params)}`;
+    const cached = getCached<Booking[]>(cacheKey);
+    if (cached) {
+      const supabase = getSupabaseClient();
+      const isCustomer = !currentUser || currentUser.role === 'customer';
+      const effectiveParams: Record<string, string> = { ...(params as Record<string, string>) };
+      if (isCustomer && currentUser?.id) effectiveParams.customer_id = currentUser.id;
+      if (supabase && !isCustomer) {
+        // ponytail: admin reads from Express only (see bypassSupabase comment)
+      } else {
+        const queryStr = new URLSearchParams(effectiveParams).toString();
+        fetchApi<Booking[]>(`/api/bookings${queryStr ? `?${queryStr}` : ''}`).then(d => setCache(cacheKey, d)).catch(() => {});
+      }
+      return cached;
+    }
     const supabase = getSupabaseClient();
     const isCustomer = !currentUser || currentUser.role === 'customer';
     const effectiveParams: Record<string, string> = { ...(params as Record<string, string>) };
     if (isCustomer && currentUser?.id) effectiveParams.customer_id = currentUser.id;
-    if (supabase) {
+    if (supabase && isCustomer) {
       let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
       if (effectiveParams.customer_id) query = query.eq('customer_id', effectiveParams.customer_id);
       if (effectiveParams.staff_id) query = query.eq('staff_id', effectiveParams.staff_id);
       if (effectiveParams.date) query = query.eq('booking_date', effectiveParams.date);
       if (effectiveParams.status) query = query.eq('status', effectiveParams.status);
       const { data, error } = await query;
-      if (!error && data) return data as Booking[];
+      if (!error && data) { setCache(cacheKey, data); return data as Booking[]; }
     }
 
     const queryStr = new URLSearchParams(effectiveParams).toString();
-    return fetchApi<Booking[]>(`/api/bookings${queryStr ? `?${queryStr}` : ''}`);
+    const data = await fetchApi<Booking[]>(`/api/bookings${queryStr ? `?${queryStr}` : ''}`);
+    setCache(cacheKey, data);
+    return data;
   },
 
   async createBooking(bookingData: Partial<Booking>): Promise<Booking> {
+    invalidateCache('bookings');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('bookings').insert([bookingData]).select().single();
       if (!error && data) return data as Booking;
     }
@@ -130,8 +185,9 @@ export const api = {
   },
 
   async updateBookingStatus(id: string, status: BookingStatus): Promise<Booking> {
+    invalidateCache('bookings');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase
         .from('bookings')
         .update({ status, updated_at: new Date().toISOString() })
@@ -148,22 +204,32 @@ export const api = {
 
   // Reviews
   async getReviews(currentUser?: Profile | null): Promise<Review[]> {
+    const cacheKey = `reviews-${currentUser?.id || 'anon'}`;
+    const cached = getCached<Review[]>(cacheKey);
+    if (cached) {
+      fetchApi<Review[]>(`/api/reviews${currentUser && currentUser.role === 'customer' ? `?customer_id=${currentUser.id}` : ''}`)
+        .then(d => setCache(cacheKey, d)).catch(() => {});
+      return cached;
+    }
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
       if (currentUser && currentUser.role === 'customer') {
         query = query.eq('customer_id', currentUser.id);
       }
       const { data, error } = await query;
-      if (!error && data) return data as Review[];
+      if (!error && data) { setCache(cacheKey, data); return data as Review[]; }
     }
     const params = currentUser && currentUser.role === 'customer' ? `?customer_id=${currentUser.id}` : '';
-    return fetchApi<Review[]>(`/api/reviews${params}`);
+    const data = await fetchApi<Review[]>(`/api/reviews${params}`);
+    setCache(cacheKey, data);
+    return data;
   },
 
   async createReview(reviewData: Partial<Review>): Promise<Review> {
+    invalidateCache('reviews');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('reviews').insert([reviewData]).select().single();
       if (!error && data) return data as Review;
     }
@@ -174,8 +240,9 @@ export const api = {
   },
 
   async respondToReview(id: string, response: string): Promise<Review> {
+    invalidateCache('reviews');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('reviews').update({ admin_response: response }).eq('id', id).select().single();
       if (!error && data) return data as Review;
     }
@@ -211,6 +278,7 @@ export const api = {
 
     // Fallback to Express Server-Sent Events stream
     const eventSource = new EventSource('/api/realtime/stream');
+    eventSource.onerror = () => eventSource.close();
 
     const handleEvent = (event: MessageEvent, eventName: string) => {
       try {
@@ -233,27 +301,38 @@ export const api = {
 
   // Shop
   async getShop(): Promise<{ shop: Shop; addresses: Address[]; social_media: SocialMedia[] }> {
+    const cached = getCached<{ shop: Shop; addresses: Address[]; social_media: SocialMedia[] }>('shop');
+    if (cached) {
+      fetchApi<{ shop: Shop; addresses: Address[]; social_media: SocialMedia[] }>('/api/shop')
+        .then(d => setCache('shop', d)).catch(() => {});
+      return cached;
+    }
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const [shopRes, addrRes, smRes] = await Promise.all([
         supabase.from('shops').select('*').limit(1).single(),
         supabase.from('addresses').select('*'),
         supabase.from('social_media').select('*'),
       ]);
       if (!shopRes.error && shopRes.data) {
-        return {
+        const result = {
           shop: shopRes.data as Shop,
           addresses: (addrRes.data || []) as Address[],
           social_media: (smRes.data || []) as SocialMedia[],
         };
+        setCache('shop', result);
+        return result;
       }
     }
-    return fetchApi('/api/shop');
+    const data = await fetchApi<{ shop: Shop; addresses: Address[]; social_media: SocialMedia[] }>('/api/shop');
+    setCache('shop', data);
+    return data;
   },
 
   async updateShop(data: { name?: string; logo_url?: string }): Promise<Shop> {
+    invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data: d, error } = await supabase.from('shops').update(data).eq('id', 'shop-1').select().single();
       if (!error && d) return d as Shop;
     }
@@ -261,8 +340,9 @@ export const api = {
   },
 
   async addAddress(address: string): Promise<Address> {
+    invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('addresses').insert([{ id: `addr-${Date.now()}`, shop_id: 'shop-1', address }]).select().single();
       if (!error && data) return data as Address;
     }
@@ -270,8 +350,9 @@ export const api = {
   },
 
   async deleteAddress(id: string): Promise<void> {
+    invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       await supabase.from('addresses').delete().eq('id', id);
       return;
     }
@@ -279,8 +360,9 @@ export const api = {
   },
 
   async addSocialMedia(media_name: string, link: string): Promise<SocialMedia> {
+    invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       const { data, error } = await supabase.from('social_media').insert([{ id: `sm-${Date.now()}`, shop_id: 'shop-1', media_name, link }]).select().single();
       if (!error && data) return data as SocialMedia;
     }
@@ -288,11 +370,17 @@ export const api = {
   },
 
   async deleteSocialMedia(id: string): Promise<void> {
+    invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase) {
+    if (supabase && getCurrentUser()) {
       await supabase.from('social_media').delete().eq('id', id);
       return;
     }
     await fetchApi(`/api/shop/social-media/${id}`, { method: 'DELETE' });
+  },
+
+  // Price history
+  async getPriceHistory(): Promise<PriceHistory[]> {
+    return fetchApi<PriceHistory[]>('/api/price-history');
   },
 };

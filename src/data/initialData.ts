@@ -83,7 +83,7 @@ export const INITIAL_SERVICES: Service[] = [
     price: 1250,
     duration_minutes: 60,
     category: 'Facial & Skincare',
-    image_url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=800',
+    image_url: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&q=80&w=800',
     is_active: true,
     created_at: new Date().toISOString()
   },

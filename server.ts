@@ -1,9 +1,8 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { createServer as createViteServer } from 'vite';
 import { INITIAL_SERVICES, INITIAL_STAFF, INITIAL_BOOKINGS, INITIAL_REVIEWS, INITIAL_PROFILES, INITIAL_SHOP, INITIAL_ADDRESSES, INITIAL_SOCIAL_MEDIA } from './src/data/initialData';
-import { Service, Staff, Booking, Review, Profile, Shop, Address, SocialMedia } from './src/types';
+import { Service, Staff, Booking, Review, Profile, Shop, Address, SocialMedia, PriceHistory } from './src/types';
 
 const PORT = 3000;
 const app = express();
@@ -13,6 +12,7 @@ app.use(express.json());
 // In-Memory & File Store Persistence
 const DATA_DIR = path.join(process.cwd(), 'data');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
+const TMP_FILE = path.join(DATA_DIR, 'store.tmp');
 
 interface AppStore {
   services: Service[];
@@ -24,6 +24,7 @@ interface AppStore {
   shops: Shop[];
   addresses: Address[];
   social_media: SocialMedia[];
+  priceHistory: PriceHistory[];
 }
 
 let store: AppStore = {
@@ -35,7 +36,8 @@ let store: AppStore = {
   emailLogs: [],
   shops: [INITIAL_SHOP],
   addresses: [...INITIAL_ADDRESSES],
-  social_media: [...INITIAL_SOCIAL_MEDIA]
+  social_media: [...INITIAL_SOCIAL_MEDIA],
+  priceHistory: []
 };
 
 // Ensure data persistence
@@ -63,10 +65,27 @@ function saveStore() {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf-8');
+    fs.writeFileSync(TMP_FILE, JSON.stringify(store, null, 2), 'utf-8');
+    fs.renameSync(TMP_FILE, STORE_FILE);
   } catch (err) {
     console.error('Failed to save store:', err);
   }
+}
+
+// Simple promise-based mutex for booking writes
+const bookingLock: { promise: Promise<void>; resolve: () => void }[] = [];
+async function acquireBookingLock(): Promise<() => void> {
+  let resolve: () => void;
+  const promise = new Promise<void>(r => { resolve = r; });
+  const entry = { promise, resolve: resolve! };
+  const prev = bookingLock.length > 0 ? bookingLock[bookingLock.length - 1].promise : Promise.resolve();
+  bookingLock.push(entry);
+  await prev;
+  return () => {
+    const idx = bookingLock.indexOf(entry);
+    if (idx !== -1) bookingLock.splice(idx, 1);
+    entry.resolve();
+  };
 }
 
 loadStore();
@@ -86,23 +105,24 @@ function broadcastRealtime(event: string, payload: any) {
 }
 
 // -------------------------------------------------------------
-// REALTIME SSE ENDPOINT
+// REALTIME SSE ENDPOINT  (skipped on Vercel — serverless doesn't support persistent connections)
 // -------------------------------------------------------------
-app.get('/api/realtime/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
+if (!process.env.VERCEL) {
+  app.get('/api/realtime/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-  sseClients.push(res);
+    sseClients.push(res);
 
-  // Send initial ping
-  res.write(`event: init\ndata: ${JSON.stringify({ message: 'Connected to Monikaz Parlour Realtime Stream' })}\n\n`);
+    res.write(`event: init\ndata: ${JSON.stringify({ message: 'Connected to Monikaz Parlour Realtime Stream' })}\n\n`);
 
-  req.on('close', () => {
-    sseClients = sseClients.filter(client => client !== res);
+    req.on('close', () => {
+      sseClients = sseClients.filter(client => client !== res);
+    });
   });
-});
+}
 
 // -------------------------------------------------------------
 // API ROUTES
@@ -112,20 +132,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'Monikaz Parlour API', time: new Date().toISOString() });
 });
 
-app.get('/api/initial-data', (req, res) => {
-  res.json(store);
-});
-
 // SERVICE ROUTES
 app.get('/api/services', (req, res) => {
   res.json(store.services);
 });
 
 app.post('/api/services', (req, res) => {
+  const { name, description, price, duration_minutes, category, image_url, is_active, discount_percent } = req.body;
   const newService: Service = {
     id: `srv-${Date.now()}`,
-    ...req.body,
-    is_active: req.body.is_active ?? true,
+    name: name || '',
+    description: description || '',
+    price: Number(price) || 0,
+    duration_minutes: Number(duration_minutes) || 60,
+    category: category || 'Hair & Styling',
+    image_url: image_url || '',
+    is_active: is_active ?? true,
+    discount_percent: discount_percent ? Number(discount_percent) : undefined,
     created_at: new Date().toISOString()
   };
   store.services.unshift(newService);
@@ -140,10 +163,36 @@ app.put('/api/services/:id', (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: 'Service not found' });
   }
-  store.services[index] = { ...store.services[index], ...req.body };
+  const allowed = ['name', 'description', 'price', 'duration_minutes', 'category', 'image_url', 'is_active', 'discount_percent', 'updated_by'];
+  for (const key of allowed) {
+    if (key in req.body) {
+      if (key === 'price' || key === 'duration_minutes' || key === 'discount_percent') {
+        (store.services[index] as any)[key] = Number(req.body[key]);
+      } else {
+        (store.services[index] as any)[key] = req.body[key];
+      }
+    }
+  }
+  // Log price/discount change to price history
+  const updated = store.services[index];
+  store.priceHistory.unshift({
+    id: `ph-${Date.now()}`,
+    service_id: updated.id,
+    shop_id: store.shops[0]?.id,
+    updated_by: req.body.updated_by || undefined,
+    price: updated.price,
+    discount_percent: updated.discount_percent || 0,
+    after_discount: updated.discount_percent ? Math.round(updated.price * (1 - updated.discount_percent / 100)) : updated.price,
+    changed_at: new Date().toISOString()
+  });
   saveStore();
-  broadcastRealtime('service_updated', { action: 'updated', service: store.services[index] });
-  res.json(store.services[index]);
+  broadcastRealtime('service_updated', { action: 'updated', service: updated });
+  res.json(updated);
+});
+
+// Price history
+app.get('/api/price-history', (req, res) => {
+  res.json(store.priceHistory);
 });
 
 app.delete('/api/services/:id', (req, res) => {
@@ -180,7 +229,13 @@ app.put('/api/staff/:id', (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: 'Staff member not found' });
   }
-  store.staff[index] = { ...store.staff[index], ...req.body };
+  // ponytail: prevent client-side role escalation via API
+  const allowed = ['full_name', 'bio', 'specialties', 'photo_url', 'is_active', 'email', 'phone', 'permissions', 'role'];
+  const sanitized: Record<string, any> = {};
+  for (const key of allowed) {
+    if (key in req.body) sanitized[key] = req.body[key];
+  }
+  store.staff[index] = { ...store.staff[index], ...sanitized };
   saveStore();
   broadcastRealtime('staff_updated', { action: 'updated', staff: store.staff[index] });
   res.json(store.staff[index]);
@@ -221,118 +276,132 @@ function isTimeOverlap(start1: string, end1: string, start2: string, end2: strin
   return Math.max(s1, s2) < Math.min(e1, e2);
 }
 
-app.post('/api/bookings', (req, res) => {
-  const {
-    customer_id,
-    customer_name,
-    customer_phone,
-    customer_email,
-    service_id,
-    service_name,
-    service_price,
-    service_duration,
-    staff_id,
-    staff_name,
-    booking_date,
-    start_time,
-    end_time,
-    notes
-  } = req.body;
+app.post('/api/bookings', async (req, res) => {
+  const unlock = await acquireBookingLock();
+  try {
+    const {
+      customer_id,
+      customer_name,
+      customer_phone,
+      customer_email,
+      service_id,
+      service_name,
+      service_price,
+      service_duration,
+      staff_id,
+      staff_name,
+      booking_date,
+      start_time,
+      end_time,
+      notes
+    } = req.body;
 
-  if (!service_id || !booking_date || !start_time || !end_time) {
-    return res.status(400).json({ error: 'Missing required booking fields (service, date, or time)' });
-  }
-
-  // Double-booking check for specified staff on the same date
-  if (staff_id) {
-    const doubleBooked = store.bookings.find(b => {
-      if (b.status === 'cancelled' || b.status === 'no_show') return false;
-      if (b.staff_id === staff_id && b.booking_date === booking_date) {
-        return isTimeOverlap(start_time, end_time, b.start_time, b.end_time);
-      }
-      return false;
-    });
-
-    if (doubleBooked) {
-      return res.status(409).json({
-        error: `Stylist ${staff_name || 'selected'} is already booked for ${doubleBooked.service_name} between ${doubleBooked.start_time} and ${doubleBooked.end_time} on ${booking_date}. Please pick another time slot or staff member.`
-      });
+    if (!service_id || !booking_date || !start_time || !end_time) {
+      unlock();
+      return res.status(400).json({ error: 'Missing required booking fields (service, date, or time)' });
     }
+
+    // Double-booking check for specified staff on the same date
+    if (staff_id) {
+      const doubleBooked = store.bookings.find(b => {
+        if (b.status === 'cancelled' || b.status === 'no_show') return false;
+        if (b.staff_id === staff_id && b.booking_date === booking_date) {
+          return isTimeOverlap(start_time, end_time, b.start_time, b.end_time);
+        }
+        return false;
+      });
+
+      if (doubleBooked) {
+        unlock();
+        return res.status(409).json({
+          error: `Stylist ${staff_name || 'selected'} is already booked for ${doubleBooked.service_name} between ${doubleBooked.start_time} and ${doubleBooked.end_time} on ${booking_date}. Please pick another time slot or staff member.`
+        });
+      }
+    }
+
+    const newBooking: Booking = {
+      id: `bk-${Date.now()}`,
+      customer_id: customer_id || 'user-c1',
+      customer_name: customer_name || 'Valued Customer',
+      customer_phone: customer_phone || '',
+      customer_email: customer_email || 'customer@example.com',
+      service_id,
+      service_name: service_name || 'Beauty Service',
+      service_price: Number(service_price) || 0,
+      service_duration: Number(service_duration) || 60,
+      staff_id,
+      staff_name: staff_name || 'Any Available Stylist',
+      booking_date,
+      start_time,
+      end_time,
+      status: 'pending',
+      notes: notes || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    store.bookings.unshift(newBooking);
+
+    // Send simulated confirmation email
+    const emailLog = {
+      id: `email-${Date.now()}`,
+      to: newBooking.customer_email,
+      subject: `Booking Request Received - Monikaz Parlour (#${newBooking.id})`,
+      body: `Hello ${newBooking.customer_name},\n\nYour appointment for "${newBooking.service_name}" on ${newBooking.booking_date} at ${newBooking.start_time} with ${newBooking.staff_name} has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!`,
+      sent_at: new Date().toISOString()
+    };
+    store.emailLogs.unshift(emailLog);
+
+    saveStore();
+
+    // Realtime notification broadcast
+    broadcastRealtime('booking_created', newBooking);
+
+    res.status(201).json(newBooking);
+  } finally {
+    unlock();
   }
-
-  const newBooking: Booking = {
-    id: `bk-${Date.now()}`,
-    customer_id: customer_id || 'user-c1',
-    customer_name: customer_name || 'Valued Customer',
-    customer_phone: customer_phone || '',
-    customer_email: customer_email || 'customer@example.com',
-    service_id,
-    service_name: service_name || 'Beauty Service',
-    service_price: Number(service_price) || 0,
-    service_duration: Number(service_duration) || 60,
-    staff_id,
-    staff_name: staff_name || 'Any Available Stylist',
-    booking_date,
-    start_time,
-    end_time,
-    status: 'pending',
-    notes: notes || '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-
-  store.bookings.unshift(newBooking);
-
-  // Send simulated confirmation email
-  const emailLog = {
-    id: `email-${Date.now()}`,
-    to: newBooking.customer_email,
-    subject: `Booking Request Received - Monikaz Parlour (#${newBooking.id})`,
-    body: `Hello ${newBooking.customer_name},\n\nYour appointment for "${newBooking.service_name}" on ${newBooking.booking_date} at ${newBooking.start_time} with ${newBooking.staff_name} has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!`,
-    sent_at: new Date().toISOString()
-  };
-  store.emailLogs.unshift(emailLog);
-
-  saveStore();
-
-  // Realtime notification broadcast
-  broadcastRealtime('booking_created', newBooking);
-
-  res.status(201).json(newBooking);
 });
 
-app.patch('/api/bookings/:id/status', (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
+app.patch('/api/bookings/:id/status', async (req, res) => {
+  const unlock = await acquireBookingLock();
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-  const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'];
+    if (!validStatuses.includes(status)) {
+      unlock();
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const index = store.bookings.findIndex(b => b.id === id);
+    if (index === -1) {
+      unlock();
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    store.bookings[index].status = status;
+    store.bookings[index].updated_at = new Date().toISOString();
+
+    // Status update email log
+    const updatedBk = store.bookings[index];
+    const emailLog = {
+      id: `email-${Date.now()}`,
+      to: updatedBk.customer_email,
+      subject: `Booking Status Update: ${status.toUpperCase()} - Monikaz Parlour`,
+      body: `Hello ${updatedBk.customer_name},\n\nYour appointment #${updatedBk.id} for "${updatedBk.service_name}" on ${updatedBk.booking_date} is now status: ${status}.\n\nSee you at Monikaz Parlour!`,
+      sent_at: new Date().toISOString()
+    };
+    store.emailLogs.unshift(emailLog);
+
+    saveStore();
+    broadcastRealtime('booking_status_changed', updatedBk);
+
+    res.json(updatedBk);
+  } finally {
+    unlock();
   }
-
-  const index = store.bookings.findIndex(b => b.id === id);
-  if (index === -1) {
-    return res.status(404).json({ error: 'Booking not found' });
-  }
-
-  store.bookings[index].status = status;
-  store.bookings[index].updated_at = new Date().toISOString();
-
-  // Status update email log
-  const updatedBk = store.bookings[index];
-  const emailLog = {
-    id: `email-${Date.now()}`,
-    to: updatedBk.customer_email,
-    subject: `Booking Status Update: ${status.toUpperCase()} - Monikaz Parlour`,
-    body: `Hello ${updatedBk.customer_name},\n\nYour appointment #${updatedBk.id} for "${updatedBk.service_name}" on ${updatedBk.booking_date} is now status: ${status}.\n\nSee you at Monikaz Parlour!`,
-    sent_at: new Date().toISOString()
-  };
-  store.emailLogs.unshift(emailLog);
-
-  saveStore();
-  broadcastRealtime('booking_status_changed', updatedBk);
-
-  res.json(updatedBk);
 });
 
 // REVIEWS ROUTES
@@ -416,8 +485,12 @@ app.post('/api/reviews/:id/respond', (req, res) => {
   res.json(store.reviews[index]);
 });
 
-// EMAIL LOGS ROUTE
+// EMAIL LOGS ROUTE (protected — same-origin only)
 app.get('/api/email-logs', (req, res) => {
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (origin && !origin.includes(req.headers.host || '')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   res.json(store.emailLogs);
 });
 
@@ -467,8 +540,9 @@ app.delete('/api/shop/social-media/:id', (req, res) => {
 });
 
 // START EXPRESS SERVER & MOUNT VITE
-async function start() {
+async function setupStaticServing() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -481,10 +555,16 @@ async function start() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✨ Monikaz Parlour Full-Stack App running on http://0.0.0.0:${PORT}`);
-  });
 }
 
-start();
+if (!process.env.VERCEL) {
+  setupStaticServing().then(() => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✨ Monikaz Parlour Full-Stack App running on http://0.0.0.0:${PORT}`);
+    });
+  });
+} else {
+  setupStaticServing();
+}
+
+export default app;

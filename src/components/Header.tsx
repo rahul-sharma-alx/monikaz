@@ -5,8 +5,8 @@ import { UserRole, Profile, Shop } from '../types';
 interface HeaderProps {
   currentRole: UserRole;
   onRoleChange: (role: UserRole) => void;
-  activeTab: 'services' | 'staff' | 'bookings' | 'admin';
-  setActiveTab: (tab: 'services' | 'staff' | 'bookings' | 'admin') => void;
+  activeTab: 'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about';
+  setActiveTab: (tab: 'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about') => void;
   onOpenBooking: () => void;
   unreadCount: number;
   onOpenNotifications: () => void;
@@ -15,6 +15,7 @@ interface HeaderProps {
   currentUser: Profile | null;
   onOpenAuthModal: () => void;
   shop?: Shop | null;
+  bestOffer?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,10 +31,11 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenAuthModal,
   shop,
+  bestOffer,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleNavClick = (tab: 'services' | 'staff' | 'bookings' | 'admin') => {
+  const handleNavClick = (tab: 'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about') => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
@@ -43,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Top Announcement Bar */}
       <div className="bg-[#2C221E] text-[#F3E8E1] px-4 py-1.5 text-xs text-center flex items-center justify-center gap-2 font-medium">
         <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] animate-pulse" />
-        <span>Welcome to Monikaz Parlour — Special offer: 15% off on 24K Gold Facial! Book now!</span>
+        <span>{bestOffer || 'Welcome to Monikaz Parlour — Special offer: 15% off on 24K Gold Facial! Book now!'}</span>
         <button
           onClick={onOpenBooking}
           className="underline text-[#E5C380] hover:text-white ml-2 transition-colors cursor-pointer"
@@ -52,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
           {/* Logo */}
@@ -179,7 +181,8 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Quick Booking Button */}
+            {/* Quick Booking Button — hidden for admin role */}
+            {currentRole !== 'admin' && (
             <button
               onClick={onOpenBooking}
               className="bg-gradient-to-r from-[#2C221E] to-[#4A3933] hover:from-[#3D2F2A] hover:to-[#5B4840] text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-full shadow-md transition-all cursor-pointer flex items-center gap-1.5 border border-[#D4AF37]/20 min-h-[44px]"
@@ -188,6 +191,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Book Appointment</span>
               <span className="sm:hidden font-bold">Book</span>
             </button>
+            )}
 
             {/* Mobile Menu Toggle */}
             <button

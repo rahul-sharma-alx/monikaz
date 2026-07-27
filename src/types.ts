@@ -32,6 +32,7 @@ export interface Service {
   category: 'Hair & Styling' | 'Facial & Skincare' | 'Nails & Hands' | 'Makeup & Bridal' | 'Body Spa';
   image_url: string;
   is_active: boolean;
+  discount_percent?: number;
   created_at?: string;
 }
 
@@ -121,4 +122,15 @@ export interface SocialMedia {
   shop_id: string;
   media_name: 'instagram' | 'facebook' | 'whatsapp';
   link: string;
+}
+
+export interface PriceHistory {
+  id: string;
+  service_id: string;
+  price: number;
+  discount_percent: number;
+  after_discount: number;
+  changed_at: string;
+  shop_id?: string;
+  updated_by?: string;
 }

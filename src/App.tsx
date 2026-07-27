@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { UserRole, Service, Staff, Booking, Review, Notification, BookingStatus, SupabaseConfig, Profile, Shop, Address, SocialMedia } from './types';
 import { api } from './services/api';
 import { getSupabaseCredentials, saveSupabaseCredentials, setupAuthListener, onAuthChange, getSupabaseClient, signOut } from './lib/supabase';
+import { Phone, MapPin, MessageCircle, Sparkles, Scissors } from 'lucide-react';
 
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -17,6 +18,7 @@ import { NotificationToast } from './components/NotificationToast';
 import { Footer } from './components/Footer';
 import { SmoothScroll } from './components/SmoothScroll';
 import { AuthModal } from './components/AuthModal';
+import { ProfileModal } from './components/ProfileModal';
 
 export default function App() {
   // Auth & Profile State
@@ -38,10 +40,20 @@ export default function App() {
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(() => currentUser?.role || 'customer');
-  const [activeTab, setActiveTab] = useState<'services' | 'staff' | 'bookings' | 'admin'>('services');
+  const [activeTab, setActiveTab] = useState<'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about'>(() => {
+    const saved = sessionStorage.getItem('monikaz_activeTab');
+    if (saved === 'services' || saved === 'staff' || saved === 'bookings' || saved === 'admin' || saved === 'contact' || saved === 'about') return saved;
+    return 'services';
+  });
+  // Persist activeTab across reloads
+  const handleSetActiveTab = (tab: 'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about') => {
+    sessionStorage.setItem('monikaz_activeTab', tab);
+    setActiveTab(tab);
+  };
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [requiredRoleForAdmin, setRequiredRoleForAdmin] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   // Main Data Collections
   const [services, setServices] = useState<Service[]>([]);
@@ -203,7 +215,26 @@ export default function App() {
 
   const addNotification = (notif: Notification) => {
     setNotifications(prev => [notif, ...prev]);
+    playNotificationSound();
   };
+
+  // Web Audio notification chime — no file needed
+  function playNotificationSound() {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch { /* audio not available */ }
+  }
 
   const handleDismissNotification = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -223,10 +254,18 @@ export default function App() {
   };
 
   const handleBookingSubmitted = async (bookingData: Partial<Booking>) => {
-    const created = await api.createBooking(bookingData);
+    const data = { ...bookingData };
+    if (!data.customer_id && currentUser) data.customer_id = currentUser.id;
+    const created = await api.createBooking(data);
     setBookings(prev => [created, ...prev]);
+    loadData();
     const updatedLogs = await api.getEmailLogs().catch(() => []);
     setEmailLogs(updatedLogs);
+
+    // Take customer to their appointments after booking
+    if (currentRole === 'customer' || !currentUser) {
+      handleSetActiveTab('bookings');
+    }
 
     addNotification({
       id: `notif-${Date.now()}`,
@@ -357,9 +396,14 @@ export default function App() {
     localStorage.removeItem('monikaz_user');
     signOut();
     if (activeTab === 'admin') {
-      setActiveTab('services');
+      handleSetActiveTab('services');
     }
     setIsAuthModalOpen(false);
+  };
+
+  const handleUpdateProfile = (updated: Profile) => {
+    setCurrentUser(updated);
+    setCurrentRole(updated.role);
   };
 
   const handleRoleChange = (role: UserRole) => {
@@ -370,7 +414,7 @@ export default function App() {
     }
   };
 
-  const handleTabChange = (tab: 'services' | 'staff' | 'bookings' | 'admin') => {
+  const handleTabChange = (tab: 'services' | 'staff' | 'bookings' | 'admin' | 'contact' | 'about') => {
     if (tab === 'admin') {
       if (currentRole !== 'admin' || currentUser?.role !== 'admin') {
         setCurrentRole('admin');
@@ -379,7 +423,7 @@ export default function App() {
         return;
       }
     }
-    setActiveTab(tab);
+    handleSetActiveTab(tab);
   };
 
   const handleSaveSupabaseCredentialsHandler = (url: string, key: string) => {
@@ -409,7 +453,7 @@ export default function App() {
             setIsBookingModalOpen(true);
           }}
           unreadCount={unreadNotifCount}
-          onOpenNotifications={() => setActiveTab('bookings')}
+          onOpenNotifications={() => handleSetActiveTab('bookings')}
           isConnected={isConnected}
           onOpenSupabaseModal={() => {
             handleTabChange('admin');
@@ -420,6 +464,12 @@ export default function App() {
             setIsAuthModalOpen(true);
           }}
           shop={shop}
+          bestOffer={(() => {
+            const withDiscount = services.filter(s => s.discount_percent && s.discount_percent > 0 && s.is_active);
+            if (withDiscount.length === 0) return '';
+            const best = withDiscount.reduce((a, b) => (a.discount_percent || 0) > (b.discount_percent || 0) ? a : b);
+            return `🔥 ${best.discount_percent}% OFF on ${best.name} — Book now!`;
+          })()}
         />
 
         {/* Main Content Render */}
@@ -502,10 +552,126 @@ export default function App() {
               onDeleteSocialMedia={handleDeleteSocialMedia}
             />
           )}
+
+          {activeTab === 'contact' && (
+            <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+              <h2 className="font-serif text-3xl font-bold text-[#2C221E] flex items-center gap-2">
+                <Phone className="w-6 h-6 text-[#A87B51]" /> Contact Us
+              </h2>
+              <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-sm space-y-5">
+                {shop && (
+                  <div className="space-y-2">
+                    <h3 className="font-serif text-xl font-bold text-[#2C221E]">{shop.name}</h3>
+                    {addresses && addresses.length > 0 && (
+                      <p className="text-sm text-[#68584E] flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-[#A87B51] shrink-0 mt-0.5" />
+                        {addresses.map(a => a.address).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {socialMedia && socialMedia.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-sm text-[#2C221E]">Reach us on</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {socialMedia.map(sm => (
+                        <a
+                          key={sm.id}
+                          href={sm.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF6F3] border border-[#E3D8CE] hover:bg-[#E8DFD8] transition-colors text-sm font-semibold text-[#2C221E]"
+                        >
+                          {sm.media_name === 'whatsapp' && <MessageCircle className="w-5 h-5 text-green-600" />}
+                          {sm.media_name === 'instagram' && <span className="text-pink-600 text-lg">📷</span>}
+                          {sm.media_name === 'facebook' && <span className="text-blue-600 font-bold text-lg">f</span>}
+                          <span className="capitalize">{sm.media_name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(!socialMedia || socialMedia.length === 0) && (
+                  <p className="text-sm text-stone-500 italic">No contact links added yet. Check back soon!</p>
+                )}
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-sm text-amber-800 flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <span>Visit us at our salon or reach out via WhatsApp for quick responses. We'd love to hear from you!</span>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'about' && (
+            <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+              <h2 className="font-serif text-3xl font-bold text-[#2C221E]">About Monikaz Parlour</h2>
+
+              <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row items-start gap-6">
+                  <div className="w-full sm:w-48 h-48 rounded-2xl overflow-hidden shrink-0 bg-[#FAF6F3] border border-[#E3D8CE]">
+                    <img
+                      src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=400"
+                      alt="Monikaz Parlour"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="font-serif text-xl font-bold text-[#2C221E]">Our Story</h3>
+                    <p className="text-sm text-[#68584E] leading-relaxed">
+                      Monikaz Parlour is a premium beauty and wellness destination located in the heart of Bandra, Mumbai. 
+                      We specialize in hair styling, skincare, bridal makeup, nail art, and body spa treatments — 
+                      offering a complete self-care experience under one roof.
+                    </p>
+                    <p className="text-sm text-[#68584E] leading-relaxed">
+                      Founded with a passion for making every woman feel beautiful and confident, our salon combines 
+                      modern techniques with traditional hospitality. Every treatment is tailored to your unique needs 
+                      using high-quality, organic products.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl p-5 border border-[#E3D8CE] text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center mx-auto">
+                    <Scissors className="w-5 h-5 text-[#A87B51]" />
+                  </div>
+                  <h4 className="font-bold text-sm text-[#2C221E]">Expert Stylists</h4>
+                  <p className="text-xs text-[#68584E]">Certified professionals with years of experience in advanced beauty treatments.</p>
+                </div>
+                <div className="bg-white rounded-2xl p-5 border border-[#E3D8CE] text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center mx-auto">
+                    <Sparkles className="w-5 h-5 text-[#A87B51]" />
+                  </div>
+                  <h4 className="font-bold text-sm text-[#2C221E]">Premium Products</h4>
+                  <p className="text-xs text-[#68584E]">We use only 100% organic and dermatologically tested products for every service.</p>
+                </div>
+                <div className="bg-white rounded-2xl p-5 border border-[#E3D8CE] text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center mx-auto">
+                    <MapPin className="w-5 h-5 text-[#A87B51]" />
+                  </div>
+                  <h4 className="font-bold text-sm text-[#2C221E]">Prime Location</h4>
+                  <p className="text-xs text-[#68584E]">Conveniently located in Bandra West with easy access and a relaxing ambiance.</p>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF6F3] rounded-3xl p-6 border border-[#E3D8CE] space-y-3">
+                <h3 className="font-serif text-lg font-bold text-[#2C221E]">Our Services</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  {['Hair Styling & Keratin Treatment', 'Facial & Skincare', 'Bridal Makeup & Hair', 'Manicure & Pedicure', 'Nail Art & Extensions', 'Body Spa & Massage'].map(s => (
+                    <div key={s} className="flex items-center gap-2 text-[#68584E]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#A87B51]" />
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </main>
 
         {/* Footer */}
-        <Footer shop={shop} addresses={addresses} socialMedia={socialMedia} />
+        <Footer shop={shop} addresses={addresses} socialMedia={socialMedia} onNavigate={(tab) => handleSetActiveTab(tab)} />
 
         {/* Interactive Booking Wizard Modal */}
         <BookingFlowModal
@@ -516,7 +682,11 @@ export default function App() {
           existingBookings={bookings}
           preselectedService={preselectedService}
           preselectedStaff={preselectedStaff}
+          currentUser={currentUser}
           onBookingSubmitted={handleBookingSubmitted}
+          shop={shop}
+          socialMedia={socialMedia}
+          addresses={addresses}
         />
 
         {/* Review & Rating Modal */}
@@ -541,6 +711,15 @@ export default function App() {
           onLogin={handleLogin}
           onLogout={handleLogout}
           requiredRoleForAdmin={requiredRoleForAdmin}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+        />
+
+        {/* Profile Editor Modal */}
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          currentUser={currentUser}
+          onUpdateProfile={handleUpdateProfile}
         />
 
       </div>

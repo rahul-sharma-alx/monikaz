@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Service } from '../types';
 import { Clock, Sparkles, Filter, Check, Eye, ArrowUpDown, X, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ServiceCatalogProps {
   services: Service[];
@@ -319,11 +320,19 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {filteredServices.map((service) => (
-            <div
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-50px' }}
+          variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"
+        >
+          {filteredServices.map((service, i) => (
+            <motion.div
               key={service.id}
-              className="group bg-white rounded-3xl overflow-hidden border border-[#E3D8CE] shadow-2xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } } }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="group bg-white rounded-3xl overflow-hidden border border-[#E3D8CE] shadow-2xs hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between"
             >
               {/* Service Header with Responsive Image */}
               <div>
@@ -338,8 +347,15 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                     {service.category}
                   </div>
                   <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-[#2C221E] text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-                    ₹{service.price}
+                    {service.discount_percent && service.discount_percent > 0 ? (
+                      <span>₹{Math.round(service.price * (1 - service.discount_percent / 100))}</span>
+                    ) : `₹${service.price}`}
                   </div>
+                  {service.discount_percent && service.discount_percent > 0 && (
+                    <div className="absolute top-12 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
+                      {service.discount_percent}% OFF
+                    </div>
+                  )}
                 </div>
 
                 {/* Card Content */}
@@ -382,15 +398,28 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                   <span>Book Service</span>
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
-      {/* Service Detail Modal — Fully Responsive Mobile Drawer/Modal */}
+      <AnimatePresence>
       {detailModalService && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-[#E3D8CE] shadow-2xl animate-in slide-in-from-bottom duration-200 sm:animate-in sm:zoom-in">
+        <motion.div
+          key="service-detail-modal"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4"
+        >
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-[#E3D8CE] shadow-2xl"
+          >
             <div className="relative h-52 sm:h-60 bg-stone-100">
               <img
                 src={detailModalService.image_url}
@@ -412,7 +441,9 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                   {detailModalService.category}
                 </span>
                 <span className="font-serif text-2xl font-bold text-[#2C221E]">
-                  ₹{detailModalService.price}
+                  {detailModalService.discount_percent && detailModalService.discount_percent > 0 ? (
+                    <span>₹{Math.round(detailModalService.price * (1 - detailModalService.discount_percent / 100))} <span className="text-base text-stone-400 line-through">₹{detailModalService.price}</span></span>
+                  ) : `₹${detailModalService.price}`}
                 </span>
               </div>
 
@@ -467,9 +498,10 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
     </section>
   );
