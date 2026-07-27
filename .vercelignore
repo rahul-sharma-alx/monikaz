@@ -1,8 +1,4 @@
 .git
 .gitignore
 *.md
-node_modules
-src
-tsconfig.json
-vite.config.ts
 bun.lock
