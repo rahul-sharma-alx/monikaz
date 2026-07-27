@@ -120,10 +120,10 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
       {/* Dashboard Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <span className="text-xs uppercase tracking-widest text-[#A87B51] font-bold">Personal Portal</span>
-          <h2 className="font-serif text-3xl font-bold text-[#2C221E] mt-0.5">My Appointments & Activity</h2>
+          <span className="text-xs uppercase tracking-widest text-[#A87B51] font-bold">My Account</span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#2C221E] mt-0.5">My Appointments</h2>
           <p className="text-xs text-[#8A7568] mt-1">
-            View live status changes, manage upcoming bookings, or rate your completed beauty sessions.
+            View your upcoming bookings, check status, or rate completed services.
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
         <div className="flex items-center bg-[#FAF6F3] p-1 rounded-full border border-[#E3D8CE] self-start sm:self-auto">
           <button
             onClick={() => setActiveTab('bookings')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 min-h-[44px] rounded-full text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'bookings' ? 'bg-[#2C221E] text-white shadow-xs' : 'text-[#8A7568]'
             }`}
           >
@@ -139,7 +139,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('emails')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-4 py-2 min-h-[44px] rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'emails' ? 'bg-[#2C221E] text-white shadow-xs' : 'text-[#8A7568]'
             }`}
           >
@@ -171,7 +171,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
+                className={`px-4 py-2 min-h-[44px] rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
                   filter === f
                     ? 'bg-[#2C221E] text-white'
                     : 'bg-white text-[#68584E] border border-[#E3D8CE] hover:border-[#A87B51]'
@@ -185,8 +185,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           {filteredBookings.length === 0 ? (
             <div className="text-center py-16 bg-[#FAF6F3] rounded-3xl border border-dashed border-[#D9CCC0]">
               <Calendar className="w-10 h-10 text-[#A87B51] mx-auto mb-2 opacity-60" />
-              <p className="font-serif text-lg font-bold text-[#2C221E]">No appointments in this view</p>
-              <p className="text-xs text-[#8A7568] mt-1">Book your next beauty session to see live status updates here.</p>
+              <p className="font-serif text-lg font-bold text-[#2C221E]">No appointments found</p>
+              <p className="text-xs text-[#8A7568] mt-1">Book a service to see your appointments here.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -238,7 +238,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                           <button
                             disabled={actionLoadingId === bk.id}
                             onClick={() => handleCancel(bk)}
-                            className="px-4 py-2 rounded-full border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors cursor-pointer"
+                            className="px-4 py-2 min-h-[44px] rounded-full border border-rose-300 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors cursor-pointer"
                           >
                             {actionLoadingId === bk.id ? 'Cancelling...' : 'Cancel Appointment'}
                           </button>
@@ -254,7 +254,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                           ) : (
                             <button
                               onClick={() => onOpenReviewModal(bk)}
-                              className="px-4 py-2.5 rounded-full bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                              className="px-4 py-2.5 min-h-[44px] rounded-full bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
                             >
                               <Star className="w-3.5 h-3.5 text-[#D4AF37] fill-current" />
                               <span>Leave Review</span>

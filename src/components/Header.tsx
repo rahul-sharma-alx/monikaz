@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Calendar, User, ShieldCheck, Bell, Scissors, Database, Menu, X, LogIn, ChevronDown } from 'lucide-react';
-import { UserRole, Profile } from '../types';
+import { UserRole, Profile, Shop } from '../types';
 
 interface HeaderProps {
   currentRole: UserRole;
@@ -14,6 +14,7 @@ interface HeaderProps {
   onOpenSupabaseModal: () => void;
   currentUser: Profile | null;
   onOpenAuthModal: () => void;
+  shop?: Shop | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSupabaseModal,
   currentUser,
   onOpenAuthModal,
+  shop,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -41,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Top Announcement Bar */}
       <div className="bg-[#2C221E] text-[#F3E8E1] px-4 py-1.5 text-xs text-center flex items-center justify-center gap-2 font-medium">
         <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] animate-pulse" />
-        <span>Welcome to Monikaz Parlour — Special launch discount: 15% off 24K Gold Facial!</span>
+        <span>Welcome to Monikaz Parlour — Special offer: 15% off on 24K Gold Facial! Book now!</span>
         <button
           onClick={onOpenBooking}
           className="underline text-[#E5C380] hover:text-white ml-2 transition-colors cursor-pointer"
@@ -55,15 +57,20 @@ export const Header: React.FC<HeaderProps> = ({
           
           {/* Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleNavClick('services')}>
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#2C221E] to-[#4A3933] flex items-center justify-center text-[#D4AF37] shadow-md border border-[#D4AF37]/30">
-              <Scissors className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#2C221E] to-[#4A3933] flex items-center justify-center text-[#D4AF37] shadow-md border border-[#D4AF37]/30 overflow-hidden">
+              {shop?.logo_url ? (
+                <img src={shop.logo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Scissors className="w-5 h-5" />
+              )}
             </div>
             <div>
               <span className="font-serif text-2xl font-bold tracking-tight text-[#2C221E] block leading-none">
-                Monikaz <span className="italic font-normal text-[#A87B51]">Parlour</span>
+                {shop?.name || 'Monikaz'}{' '}
+                <span className="italic font-normal text-[#A87B51]">Parlour</span>
               </span>
               <span className="text-[10px] tracking-widest uppercase text-[#8A7568] font-medium block mt-1">
-                Haute Beauty & Spa
+                Premium Beauty & Spa Salon
               </span>
             </div>
           </div>
@@ -101,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Calendar className="w-4 h-4" />
               <span>My Bookings</span>
             </button>
-            {currentRole === 'admin' && (
+            {currentRole !== 'customer' && (
               <button
                 onClick={() => handleNavClick('admin')}
                 className={`px-5 py-2 rounded-full text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -120,15 +127,15 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             
             {/* Realtime Status Indicator */}
-            <button
+            {/* <button
               onClick={onOpenSupabaseModal}
               title="Database & Realtime Status"
               className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F2ECE6] border border-[#E3D8CE] text-xs text-[#52433A] hover:bg-[#EAE2D9] transition-colors cursor-pointer"
-            >
-              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
+            > */}
+              {/* <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
               <Database className="w-3.5 h-3.5 text-[#8A7568]" />
               <span className="font-medium">{isConnected ? 'Realtime Connected' : 'Local DB'}</span>
-            </button>
+            </button> */}
 
             {/* User Profile / Auth Trigger (Desktop only) */}
             <button
@@ -360,7 +367,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Bookings</span>
           </button>
 
-          {currentRole === 'admin' && (
+          {currentRole !== 'customer' && (
             <button
               onClick={() => handleNavClick('admin')}
               className={`text-xs font-semibold py-2 px-3 rounded-full flex items-center gap-1.5 transition-colors min-h-[44px] cursor-pointer ${

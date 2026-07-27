@@ -33,15 +33,15 @@ export const Hero: React.FC<HeroProps> = ({
         >
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAE1D8]/80 backdrop-blur-md border border-[#D9CCC0] text-[#5C4A3E] text-xs font-semibold tracking-wide uppercase shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
-            <span>Exquisite Beauty & Wellness Sanctuary</span>
+            <span>Premium Beauty & Wellness Salon</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-[#2C221E] leading-tight">
-            Indulge in <span className="italic font-normal text-[#A87B51]">Timeless Elegance</span> & Rejuvenation.
+            Look Beautiful, <span className="italic font-normal text-[#A87B51]">Feel Confident</span> Every Day.
           </h1>
 
           <p className="text-[#68584E] text-base sm:text-lg max-w-2xl leading-relaxed">
-            Experience bespoke hair styling, 24K gold cellular facials, couture bridal makeups, and therapeutic spa rituals curated by master stylists in an atmosphere of serene luxury.
+            Expert hair styling, 24K gold facials, bridal makeup, gel manicure and relaxing body massage — all under one roof. Book your appointment today.
           </p>
 
           {/* Quick Search & Booking Controls */}
@@ -51,10 +51,10 @@ export const Hero: React.FC<HeroProps> = ({
                 <Search className="w-5 h-5 text-[#9C8B80] mr-2 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search hair keratin, gold facial, manicure..."
+                  placeholder="Search for keratin, facial, manicure..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent py-2 text-sm text-[#2C221E] placeholder-[#9C8B80] focus:outline-hidden"
+                  className="w-full bg-transparent py-2 min-h-[44px] text-sm text-[#2C221E] placeholder-[#9C8B80] focus:outline-hidden"
                 />
               </div>
               <button
@@ -74,7 +74,7 @@ export const Hero: React.FC<HeroProps> = ({
               <button
                 key={cat}
                 onClick={() => onSelectCategory(cat)}
-                className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-xs border border-[#E3D8CE] hover:border-[#A87B51] hover:text-[#A87B51] transition-all cursor-pointer shadow-2xs text-xs font-medium min-h-[36px]"
+                className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-xs border border-[#E3D8CE] hover:border-[#A87B51] hover:text-[#A87B51] transition-all cursor-pointer shadow-2xs text-xs font-medium min-h-[44px]"
               >
                 {cat}
               </button>
@@ -82,14 +82,14 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
 
           {/* Trust Highlights */}
-          <div className="pt-4 grid grid-cols-3 gap-4 border-t border-[#E8DFD8]">
+          <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-[#E8DFD8]">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-[#F2ECE6] text-[#A87B51] flex items-center justify-center shrink-0">
                 <Award className="w-4 h-4" />
               </div>
               <div>
                 <p className="font-bold text-[#2C221E] text-sm leading-none">14+ Years</p>
-                <p className="text-[11px] text-[#8A7568]">Master Stylists</p>
+                <p className="text-[11px] text-[#8A7568]">Experienced Staff</p>
               </div>
             </div>
 
@@ -108,8 +108,8 @@ export const Hero: React.FC<HeroProps> = ({
                 <Shield className="w-4 h-4" />
               </div>
               <div>
-                <p className="font-bold text-[#2C221E] text-sm leading-none">100% Organic</p>
-                <p className="text-[11px] text-[#8A7568]">Hygienic Products</p>
+                <p className="font-bold text-[#2C221E] text-sm leading-none">100% Hygienic</p>
+                <p className="text-[11px] text-[#8A7568]">Clean & Safe Products</p>
               </div>
             </div>
           </div>
@@ -131,9 +131,9 @@ export const Hero: React.FC<HeroProps> = ({
               className="w-full h-[380px] sm:h-[440px] object-cover hover:scale-105 transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 text-white">
-              <span className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Signature Service</span>
-              <h3 className="font-serif text-xl sm:text-2xl font-bold">24K Gold Cellular Rejuvenation</h3>
-              <p className="text-xs text-stone-200 mt-1">Includes LED therapy, ultrasonic cleaning & gold leaf mask.</p>
+              <span className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Popular Service</span>
+              <h3 className="font-serif text-xl sm:text-2xl font-bold">24K Gold Glow Facial</h3>
+              <p className="text-xs text-stone-200 mt-1">LED therapy, ultrasonic cleaning & gold face mask.</p>
             </div>
           </div>
 
@@ -161,7 +161,7 @@ export const Hero: React.FC<HeroProps> = ({
 
       {/* Subtle Scroll Cue Indicator */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity pointer-events-none">
-        <span className="text-[10px] uppercase font-bold tracking-widest text-[#8A7568]">Scroll To Explore</span>
+        <span className="text-[10px] uppercase font-bold tracking-widest text-[#8A7568]">Scroll for more</span>
         <ChevronDown className="w-4 h-4 text-[#A87B51] animate-bounce" />
       </div>
 

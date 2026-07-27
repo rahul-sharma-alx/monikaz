@@ -143,23 +143,23 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E3D8CE] shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in duration-200">
         
         {/* Modal Header */}
         <div className="bg-[#2C221E] text-white p-6 relative flex items-center justify-between">
           <div>
             <span className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold">
-              Online Appointment Booking
+              Book Your Appointment
             </span>
             <h3 className="font-serif text-2xl font-bold mt-0.5">
-              Monikaz Parlour <span className="italic font-normal text-[#D4AF37]">Reservation</span>
+              Monikaz Parlour <span className="italic font-normal text-[#D4AF37]">Booking</span>
             </h3>
           </div>
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
           >
             ✕
           </button>
@@ -281,7 +281,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
                       <button
                         key={dateStr}
                         onClick={() => setSelectedDate(dateStr)}
-                        className={`px-4 py-3 rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${
+                        className={`px-4 py-3 min-h-[44px] rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${
                           selectedDate === dateStr
                             ? 'bg-[#2C221E] text-white border-[#2C221E] shadow-sm'
                             : 'bg-white border-[#E3D8CE] text-[#52433A] hover:border-[#A87B51]'
@@ -310,7 +310,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
                         key={slot}
                         disabled={booked}
                         onClick={() => setSelectedStartTime(slot)}
-                        className={`py-2.5 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                        className={`py-2.5 px-3 min-h-[44px] rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                           booked
                             ? 'bg-stone-100 text-stone-400 border-stone-200 line-through cursor-not-allowed opacity-60'
                             : selectedStartTime === slot
@@ -483,7 +483,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
           {step > 1 ? (
             <button
               onClick={() => setStep(prev => prev - 1)}
-              className="px-4 py-2 rounded-full text-xs font-semibold text-[#68584E] hover:bg-[#EAE2D9] transition-colors cursor-pointer flex items-center gap-1"
+              className="px-4 py-2 min-h-[44px] rounded-full text-xs font-semibold text-[#68584E] hover:bg-[#EAE2D9] transition-colors cursor-pointer flex items-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back</span>
@@ -495,7 +495,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
           {step < 4 ? (
             <button
               onClick={handleNextStep}
-              className="bg-[#2C221E] hover:bg-[#4A3933] text-white px-6 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              className="bg-[#2C221E] hover:bg-[#4A3933] text-white px-6 py-2.5 min-h-[44px] rounded-full text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
             >
               <span>Continue</span>
               <ChevronRight className="w-4 h-4 text-[#D4AF37]" />

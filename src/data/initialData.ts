@@ -1,11 +1,11 @@
-import { Service, Staff, Booking, Review, Profile } from '../types';
+import { Service, Staff, Booking, Review, Profile, Shop, Address, SocialMedia } from '../types';
 
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'user-c1',
-    full_name: 'Sophia Williams',
+    full_name: 'Priya Sharma',
     phone: '+91 98765 43210',
-    email: 'sophia.w@example.com',
+    email: 'priya.sharma@email.com',
     role: 'customer',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
     created_at: new Date(Date.now() - 30 * 86400000).toISOString()
@@ -22,9 +22,9 @@ export const INITIAL_PROFILES: Profile[] = [
   },
   {
     id: 'user-s1',
-    full_name: 'Elena Rostova (Staff)',
+    full_name: 'Neha Kapoor (Staff)',
     phone: '+91 98765 22222',
-    email: 'elena.r@monikazparlour.com',
+    email: 'neha.k@monikazparlour.com',
     role: 'staff',
     permissions: ['manage_bookings', 'manage_reviews'],
     avatar_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=300',
@@ -45,8 +45,8 @@ export const INITIAL_PROFILES: Profile[] = [
 export const INITIAL_SERVICES: Service[] = [
   {
     id: 'srv-1',
-    name: 'Monikaz Royal Hair Keratin & Gloss',
-    description: 'Deep hair reconstruction treatment using organic keratin, leaving hair silky smooth, frizz-free, and brilliantly shiny for up to 4 months.',
+    name: 'Keratin & Gloss Hair Treatment',
+    description: 'Deep hair repair with organic keratin. Makes hair silky, smooth and frizz-free for up to 4 months. Perfect for unmanageable hair.',
     price: 1800,
     duration_minutes: 90,
     category: 'Hair & Styling',
@@ -56,8 +56,8 @@ export const INITIAL_SERVICES: Service[] = [
   },
   {
     id: 'srv-2',
-    name: 'Balayage & Couture Colouring',
-    description: 'Hand-painted dimensional hair highlighting custom tailored to your skin tone and hair length, finished with a hydrating gloss.',
+    name: 'Balayage & Hair Colouring',
+    description: 'Hand-painted highlights customised for your skin tone and hair length. Natural looking colour that grows out beautifully.',
     price: 2200,
     duration_minutes: 120,
     category: 'Hair & Styling',
@@ -67,8 +67,8 @@ export const INITIAL_SERVICES: Service[] = [
   },
   {
     id: 'srv-3',
-    name: 'Signature 24K Gold Glow Facial',
-    description: 'Ultra-luxurious cellular rejuvenation facial incorporating 24K gold foil flakes, hyaluronic serum, ultrasonic cleansing, and LED therapy.',
+    name: '24K Gold Glow Facial',
+    description: 'Luxury facial with real 24K gold foil, hyaluronic serum and LED therapy. Gives instant glow and tightens skin.',
     price: 1500,
     duration_minutes: 75,
     category: 'Facial & Skincare',
@@ -78,19 +78,19 @@ export const INITIAL_SERVICES: Service[] = [
   },
   {
     id: 'srv-4',
-    name: 'Hydra-Infusion Deep Cleansing Facial',
-    description: 'Multi-step vortex suction cleansing, mild salicylic exfoliation, and intense antioxidant hydration lock for clear, glowing skin.',
+    name: 'Deep Clean Hydra Facial',
+    description: 'Multi-step deep cleansing facial with suction, salicylic exfoliation and antioxidant hydration. Leaves skin clear and glowing.',
     price: 1250,
     duration_minutes: 60,
     category: 'Facial & Skincare',
-    image_url: 'https://images.unsplash.com/photo-1512290900673-70020083049b?auto=format&fit=crop&q=80&w=800',
+    image_url: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&q=80&w=800',
     is_active: true,
     created_at: new Date().toISOString()
   },
   {
     id: 'srv-5',
-    name: 'Luxury Gel Spa Manicure & Pedicure',
-    description: 'Complete nail shaping, cuticle nourishment, botanical sugar scrub massage, and long-lasting non-chip gel polish application.',
+    name: 'Gel Manicure & Pedicure Combo',
+    description: 'Complete nail shaping, cuticle care, sugar scrub massage and long-lasting gel polish for both hands and feet.',
     price: 950,
     duration_minutes: 60,
     category: 'Nails & Hands',
@@ -100,8 +100,8 @@ export const INITIAL_SERVICES: Service[] = [
   },
   {
     id: 'srv-6',
-    name: 'Couture Bridal Glam & Hair Styling',
-    description: 'Complete HD bridal makeup package including airbrush foundation, mink lash extensions, hair sculpting, and jewelry styling consultation.',
+    name: 'Bridal Makeup & Hair Styling',
+    description: 'Complete bridal package with HD makeup, mink lashes, hair styling and jewellery fitting. Get ready for your big day with us.',
     price: 3500,
     duration_minutes: 150,
     category: 'Makeup & Bridal',
@@ -111,8 +111,8 @@ export const INITIAL_SERVICES: Service[] = [
   },
   {
     id: 'srv-7',
-    name: 'Deep Tissue Aromatherapy Body Spa',
-    description: 'Therapeutic pressure massage using custom essential oils to release deep muscular tension, promote lymphatic flow, and calm the senses.',
+    name: 'Aromatherapy Body Massage',
+    description: 'Deep tissue massage with essential oils to release body tension, improve blood flow and calm your mind. Full body relaxation.',
     price: 1400,
     duration_minutes: 80,
     category: 'Body Spa',
@@ -126,8 +126,8 @@ export const INITIAL_STAFF: Staff[] = [
   {
     id: 'stf-1',
     full_name: 'Monika Sharma',
-    bio: 'Founder & Creative Director with 14+ years of international hair styling experience. Specialist in Balayage, Keratin, and Bridal Transformations.',
-    specialties: ['Balayage & Hair Colour', 'Keratin Treatments', 'Bridal Hair'],
+    bio: 'Founder & Senior Hair Stylist with 14+ years experience. Expert in Balayage, Keratin treatments and bridal hairstyles.',
+    specialties: ['Balayage & Hair Colour', 'Keratin Treatment', 'Bridal Hair'],
     photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
     is_active: true,
     role: 'admin',
@@ -140,8 +140,8 @@ export const INITIAL_STAFF: Staff[] = [
   {
     id: 'stf-2',
     full_name: 'Aisha Patel',
-    bio: 'Licensed Senior Medical Esthetician and Skincare Guru & Parlour Manager. Passionate about 24K Gold facials, anti-aging therapies, and sensitive skin restoration.',
-    specialties: ['24K Gold Facial', 'Hydra Facials', 'Chemical Peels'],
+    bio: 'Senior Skin Specialist & Parlour Manager. Expert in 24K Gold facials, anti-aging treatments and sensitive skin care.',
+    specialties: ['24K Gold Facial', 'Hydra Facial', 'Chemical Peel'],
     photo_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400',
     is_active: true,
     role: 'manager',
@@ -153,13 +153,13 @@ export const INITIAL_STAFF: Staff[] = [
   },
   {
     id: 'stf-3',
-    full_name: 'Elena Rostova',
-    bio: 'Master Nail Artist certified in Russian manicures, custom gel extensions, 3D nail art, and restorative hand spa treatments.',
-    specialties: ['Gel Spa Manicure', 'Acrylic Nail Art', 'Russian Manicure'],
+    full_name: 'Neha Kapoor',
+    bio: 'Master Nail Artist. Specialises in gel extensions, nail art, Russian manicure and hand spa treatments.',
+    specialties: ['Gel Manicure', 'Nail Art', 'Russian Manicure'],
     photo_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400',
     is_active: true,
     role: 'staff',
-    email: 'elena.r@monikazparlour.com',
+    email: 'neha.k@monikazparlour.com',
     phone: '+91 98765 22222',
     permissions: ['manage_bookings', 'manage_reviews'],
     rating: 4.88,
@@ -167,13 +167,13 @@ export const INITIAL_STAFF: Staff[] = [
   },
   {
     id: 'stf-4',
-    full_name: 'Sophia Rivera',
-    bio: 'Celebrity Makeup Artist with expertise in HD airbrushing, red-carpet glam, subtle natural glow looks, and bridal party styling.',
-    specialties: ['Couture Bridal Glam', 'Airbrush Makeup', 'Evening Glam'],
+    full_name: 'Ananya Verma',
+    bio: 'Celebrity Makeup Artist. Expert in HD airbrush, bridal makeup, natural glow looks and evening party glam.',
+    specialties: ['Bridal Makeup', 'Airbrush Makeup', 'Evening Glam'],
     photo_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
     is_active: true,
     role: 'staff',
-    email: 'sophia.r@monikazparlour.com',
+    email: 'ananya.v@monikazparlour.com',
     phone: '+91 98765 33333',
     permissions: ['manage_bookings'],
     rating: 5.0,
@@ -182,8 +182,8 @@ export const INITIAL_STAFF: Staff[] = [
   {
     id: 'stf-5',
     full_name: 'Priya Nair',
-    bio: 'Certified Holistic Spa & Body Therapist specializing in Deep Tissue Aromatherapy, Ayurvedic massage, and herbal body polished scrubs.',
-    specialties: ['Deep Tissue Spa', 'Aromatherapy Massage', 'Body Scrubs'],
+    bio: 'Certified Spa & Body Therapist. Specialises in deep tissue massage, aromatherapy, Ayurvedic treatments and body scrubs.',
+    specialties: ['Deep Tissue Massage', 'Aromatherapy', 'Body Scrub'],
     photo_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400',
     is_active: true,
     role: 'staff',
@@ -205,11 +205,11 @@ export const INITIAL_BOOKINGS: Booking[] = [
   {
     id: 'bk-101',
     customer_id: 'user-c1',
-    customer_name: 'Sophia Williams',
-    customer_phone: '+1 (555) 234-5678',
-    customer_email: 'sophia.w@example.com',
+    customer_name: 'Priya Sharma',
+    customer_phone: '+91 98765 43210',
+    customer_email: 'priya.sharma@email.com',
     service_id: 'srv-3',
-    service_name: 'Signature 24K Gold Glow Facial',
+    service_name: '24K Gold Glow Facial',
     service_price: 1500,
     service_duration: 75,
     staff_id: 'stf-2',
@@ -218,18 +218,18 @@ export const INITIAL_BOOKINGS: Booking[] = [
     start_time: '11:00',
     end_time: '12:15',
     status: 'in_progress',
-    notes: 'Please use extra sensitive skin moisturizer.',
+    notes: 'Please use gentle moisturiser, I have sensitive skin.',
     created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
     updated_at: new Date(Date.now() - 1800000).toISOString()
   },
   {
     id: 'bk-102',
     customer_id: 'user-c1',
-    customer_name: 'Sophia Williams',
-    customer_phone: '+1 (555) 234-5678',
-    customer_email: 'sophia.w@example.com',
+    customer_name: 'Priya Sharma',
+    customer_phone: '+91 98765 43210',
+    customer_email: 'priya.sharma@email.com',
     service_id: 'srv-1',
-    service_name: 'Monikaz Royal Hair Keratin & Gloss',
+    service_name: 'Keratin & Gloss Hair Treatment',
     service_price: 1800,
     service_duration: 90,
     staff_id: 'stf-1',
@@ -238,22 +238,22 @@ export const INITIAL_BOOKINGS: Booking[] = [
     start_time: '14:00',
     end_time: '15:30',
     status: 'confirmed',
-    notes: 'Preparing for an anniversary party!',
+    notes: 'Getting ready for my sister wedding!',
     created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
     updated_at: new Date(Date.now() - 3600000 * 24).toISOString()
   },
   {
     id: 'bk-103',
     customer_id: 'user-c2',
-    customer_name: 'Emma Thompson',
-    customer_phone: '+1 (555) 876-5432',
-    customer_email: 'emma.t@example.com',
+    customer_name: 'Ananya Verma',
+    customer_phone: '+91 98765 87654',
+    customer_email: 'ananya.v@email.com',
     service_id: 'srv-5',
-    service_name: 'Luxury Gel Spa Manicure & Pedicure',
+    service_name: 'Gel Manicure & Pedicure Combo',
     service_price: 950,
     service_duration: 60,
     staff_id: 'stf-3',
-    staff_name: 'Elena Rostova',
+    staff_name: 'Neha Kapoor',
     booking_date: getTodayString(-2),
     start_time: '15:00',
     end_time: '16:00',
@@ -265,20 +265,20 @@ export const INITIAL_BOOKINGS: Booking[] = [
   {
     id: 'bk-104',
     customer_id: 'user-c3',
-    customer_name: 'Isabella Vance',
-    customer_phone: '+1 (555) 345-6789',
-    customer_email: 'isabella.vance@example.com',
+    customer_name: 'Meera Iyer',
+    customer_phone: '+91 98765 34567',
+    customer_email: 'meera.i@email.com',
     service_id: 'srv-6',
-    service_name: 'Couture Bridal Glam & Hair Styling',
+    service_name: 'Bridal Makeup & Hair Styling',
     service_price: 3500,
     service_duration: 150,
     staff_id: 'stf-4',
-    staff_name: 'Sophia Rivera',
+    staff_name: 'Ananya Verma',
     booking_date: getTodayString(3),
     start_time: '10:00',
     end_time: '12:30',
     status: 'pending',
-    notes: 'Bridal trial booking.',
+    notes: 'Bridal trial for December wedding.',
     created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
     updated_at: new Date(Date.now() - 3600000 * 2).toISOString()
   }
@@ -289,27 +289,27 @@ export const INITIAL_REVIEWS: Review[] = [
     id: 'rev-1',
     booking_id: 'bk-103',
     customer_id: 'user-c2',
-    customer_name: 'Emma Thompson',
+    customer_name: 'Ananya Verma',
     service_id: 'srv-5',
-    service_name: 'Luxury Gel Spa Manicure & Pedicure',
+    service_name: 'Gel Manicure & Pedicure Combo',
     staff_id: 'stf-3',
-    staff_name: 'Elena Rostova',
+    staff_name: 'Neha Kapoor',
     rating: 5,
-    comment: 'Elena is an incredible nail artist! My manicure lasted over 3 weeks without a single chip. The spa hand massage was pure relaxation.',
+    comment: 'Neha is amazing! My manicure lasted 3 weeks without any chip. The hand massage was so relaxing.',
     created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    admin_response: 'Thank you so much Emma! We look forward to pampering you again soon!'
+    admin_response: 'Thank you Ananya! Looking forward to seeing you again!'
   },
   {
     id: 'rev-2',
     booking_id: 'bk-099',
     customer_id: 'user-c4',
-    customer_name: 'Olivia Martinez',
+    customer_name: 'Kavita Reddy',
     service_id: 'srv-1',
-    service_name: 'Monikaz Royal Hair Keratin & Gloss',
+    service_name: 'Keratin & Gloss Hair Treatment',
     staff_id: 'stf-1',
     staff_name: 'Monika Sharma',
     rating: 5,
-    comment: 'Monika transformed my dry, frizzy hair into liquid silk! The salon atmosphere is so welcoming and luxurious.',
+    comment: 'Monika transformed my dry frizzy hair into silky smooth! The salon is so clean and welcoming.',
     created_at: new Date(Date.now() - 86400000 * 5).toISOString()
   }
 ];
@@ -418,3 +418,18 @@ create policy "Admin Manage Reviews" on public.reviews for update using (exists 
 alter publication supabase_realtime add table public.bookings;
 alter publication supabase_realtime add table public.reviews;
 `;
+
+export const INITIAL_SHOP: Shop = {
+  id: 'shop-1',
+  name: 'Monikaz Parlour',
+  logo_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200'
+};
+
+export const INITIAL_ADDRESSES: Address[] = [
+  { id: 'addr-1', shop_id: 'shop-1', address: '123, Linking Road, Bandra West, Mumbai - 400050' }
+];
+
+export const INITIAL_SOCIAL_MEDIA: SocialMedia[] = [
+  { id: 'sm-1', shop_id: 'shop-1', media_name: 'instagram', link: 'https://instagram.com/monikazparlour' },
+  { id: 'sm-2', shop_id: 'shop-1', media_name: 'facebook', link: 'https://facebook.com/monikazparlour' }
+];

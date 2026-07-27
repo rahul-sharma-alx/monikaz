@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Service, Staff, Booking, Review, BookingStatus, SupabaseConfig, Profile, UserRole, PermissionKey } from '../types';
+import { Service, Staff, Booking, Review, BookingStatus, SupabaseConfig, Profile, UserRole, PermissionKey, Shop, Address, SocialMedia } from '../types';
 import {
   TrendingUp, Calendar, Users, Star, DollarSign, Plus, Edit,
   CheckCircle2, XCircle, Clock, Search, Filter, ShieldCheck, Database, Copy, Check,
-  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Scissors, Lock, ShieldAlert, Key, CheckSquare, Square, Mail, Phone, User
+  PanelLeftClose, PanelLeftOpen, LayoutDashboard, Scissors, Lock, ShieldAlert, Key, CheckSquare, Square, Mail, Phone, User, Store, MapPin, Link as LinkIcon, PlusCircle, Trash2, QrCode
 } from 'lucide-react';
 import { SUPABASE_SQL_SCHEMA, getTodayString } from '../data/initialData';
 import { ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS, hasPermission } from '../lib/permissions';
@@ -14,12 +14,20 @@ interface AdminDashboardProps {
   staffList: Staff[];
   bookings: Booking[];
   reviews: Review[];
+  shop: Shop | null;
+  addresses: Address[];
+  socialMedia: SocialMedia[];
   onUpdateBookingStatus: (bookingId: string, status: BookingStatus) => Promise<void>;
   onCreateService: (service: Partial<Service>) => Promise<void>;
   onUpdateService: (id: string, service: Partial<Service>) => Promise<void>;
   onCreateStaff: (staff: Partial<Staff>) => Promise<void>;
   onUpdateStaff: (id: string, staff: Partial<Staff>) => Promise<void>;
   onRespondToReview: (reviewId: string, response: string) => Promise<void>;
+  onUpdateShop: (data: { name?: string; logo_url?: string }) => Promise<void>;
+  onAddAddress: (address: string) => Promise<void>;
+  onDeleteAddress: (id: string) => Promise<void>;
+  onAddSocialMedia: (media_name: string, link: string) => Promise<void>;
+  onDeleteSocialMedia: (id: string) => Promise<void>;
   supabaseConfig: SupabaseConfig;
   onSaveSupabaseCredentials: (url: string, key: string) => void;
 }
@@ -30,16 +38,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   staffList,
   bookings,
   reviews,
+  shop,
+  addresses,
+  socialMedia,
   onUpdateBookingStatus,
   onCreateService,
   onUpdateService,
   onCreateStaff,
   onUpdateStaff,
   onRespondToReview,
+  onUpdateShop,
+  onAddAddress,
+  onDeleteAddress,
+  onAddSocialMedia,
+  onDeleteSocialMedia,
   supabaseConfig,
   onSaveSupabaseCredentials,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'security' | 'supabase'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'bookings' | 'services' | 'staff' | 'reviews' | 'security' | 'supabase' | 'shop' | 'qr'>('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   // Security & Permission Checks
@@ -118,23 +134,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
 
   const handleSaveService = async () => {
-    if (editingService) {
-      await onUpdateService(editingService.id, serviceForm);
-    } else {
-      await onCreateService(serviceForm);
+    try {
+      if (editingService) {
+        await onUpdateService(editingService.id, serviceForm);
+      } else {
+        await onCreateService(serviceForm);
+      }
+      setIsServiceModalOpen(false);
+      setEditingService(null);
+    } catch {
+      // error notification already shown by App.tsx handlers
     }
-    setIsServiceModalOpen(false);
-    setEditingService(null);
   };
 
   const handleSaveStaff = async () => {
-    if (editingStaff) {
-      await onUpdateStaff(editingStaff.id, staffForm);
-    } else {
-      await onCreateStaff(staffForm);
+    try {
+      if (editingStaff) {
+        await onUpdateStaff(editingStaff.id, staffForm);
+      } else {
+        await onCreateStaff(staffForm);
+      }
+      setIsStaffModalOpen(false);
+      setEditingStaff(null);
+    } catch {
+      // error notification already shown by App.tsx handlers
     }
-    setIsStaffModalOpen(false);
-    setEditingStaff(null);
   };
 
   const handleCopySql = () => {
@@ -150,11 +174,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="bg-gradient-to-r from-[#2C221E] via-[#4A3933] to-[#2C221E] text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-[#D4AF37]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#E5C380] text-xs font-bold uppercase">
-            <ShieldCheck className="w-3.5 h-3.5" /> Owner & Admin Command Center
+            <ShieldCheck className="w-3.5 h-3.5" /> Admin Dashboard
           </div>
-          <h1 className="font-serif text-3xl font-bold mt-2">Monikaz Parlour Operations</h1>
+          <h1 className="font-serif text-3xl font-bold mt-2">Manage Your Salon</h1>
           <p className="text-xs text-stone-300 mt-1 max-w-xl">
-            Real-time appointment schedule, revenue tracking, service menu editing, staff roster management, and Supabase cloud setup.
+            View bookings, manage staff, update services, respond to reviews, and configure salon settings.
           </p>
         </div>
 
@@ -169,7 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="flex flex-col lg:flex-row gap-6 min-h-[600px] items-start">
         
         {/* Mobile Screen Horizontal Nav Bar (Prevents vertical sidebar from covering mobile screen) */}
-        <div className="lg:hidden w-full bg-[#2C221E] text-white rounded-2xl p-2 shadow-lg border border-[#D4AF37]/30 sticky top-16 z-30">
+        <div className="lg:hidden w-full bg-[#2C221E] text-white rounded-2xl p-2 shadow-lg border border-[#D4AF37]/30 sticky top-[80px] z-30">
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 px-1">
             {[
               { id: 'overview', label: 'Overview', icon: LayoutDashboard, count: null },
@@ -178,6 +202,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
               { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
               { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
+              { id: 'shop', label: 'Shop Settings', icon: Store, count: null },
+              { id: 'qr', label: 'Generate QR', icon: QrCode, count: null },
               { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
             ].map((item) => {
               const Icon = item.icon;
@@ -186,7 +212,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <button
                   key={item.id}
                   onClick={() => setAdminTab(item.id as any)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 min-h-[44px] ${
                     isActive
                       ? 'bg-[#D4AF37] text-[#2C221E] shadow-xs font-extrabold'
                       : 'bg-[#4A3933]/70 text-stone-300 hover:bg-[#4A3933] hover:text-white'
@@ -252,6 +278,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 { id: 'staff', label: 'Staff Roster', icon: Users, count: staffList.length },
                 { id: 'reviews', label: 'Reviews', icon: Star, count: reviews.length },
                 { id: 'security', label: 'Roles & Permissions', icon: Key, count: ALL_PERMISSIONS.length },
+                { id: 'shop', label: 'Shop Settings', icon: Store, count: null },
+                { id: 'qr', label: 'Generate QR', icon: QrCode, count: null },
                 { id: 'supabase', label: 'Supabase SQL', icon: Database, count: null },
               ].map((item) => {
                 const Icon = item.icon;
@@ -1049,12 +1077,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+      {/* SHOP SETTINGS */}
+      {adminTab === 'shop' && (
+        <ShopSettings
+          shop={shop}
+          addresses={addresses}
+          socialMedia={socialMedia}
+          onUpdateShop={onUpdateShop}
+          onAddAddress={onAddAddress}
+          onDeleteAddress={onDeleteAddress}
+          onAddSocialMedia={onAddSocialMedia}
+          onDeleteSocialMedia={onDeleteSocialMedia}
+        />
+      )}
+
+      {/* QR GENERATOR */}
+      {adminTab === 'qr' && <QrGenerator />}
+
         </main>
       </div>
 
       {/* SERVICE MODAL */}
       {isServiceModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 border border-[#E3D8CE] shadow-2xl max-h-[90vh] flex flex-col my-auto overflow-hidden">
             <div className="shrink-0 flex items-center justify-between pb-3 border-b border-[#E3D8CE]">
               <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#2C221E]">
@@ -1062,7 +1107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </h3>
               <button
                 onClick={() => setIsServiceModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer"
+                className="w-11 h-11 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer"
               >
                 ✕
               </button>
@@ -1089,7 +1134,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-[#2C221E]">Category</label>
+                <select
+                  value={serviceForm.category}
+                  onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value as any })}
+                  className="w-full p-2 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]"
+                >
+                  <option value="Hair & Styling">Hair & Styling</option>
+                  <option value="Facial & Skincare">Facial & Skincare</option>
+                  <option value="Nails & Hands">Nails & Hands</option>
+                  <option value="Makeup & Bridal">Makeup & Bridal</option>
+                  <option value="Body Spa">Body Spa</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#2C221E]">Price (₹)</label>
                   <input
@@ -1113,8 +1173,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="shrink-0 flex items-center justify-end gap-2 pt-3 border-t border-[#E3D8CE]">
-              <button onClick={() => setIsServiceModalOpen(false)} className="px-4 py-2 text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer">Cancel</button>
-              <button onClick={handleSaveService} className="px-5 py-2 bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full cursor-pointer">Save Service</button>
+              <button onClick={() => setIsServiceModalOpen(false)} className="px-4 py-2 min-h-[44px] text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer">Cancel</button>
+              <button onClick={handleSaveService} className="px-5 py-2 min-h-[44px] bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full cursor-pointer">Save Service</button>
             </div>
           </div>
         </div>
@@ -1122,7 +1182,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ENHANCED STAFF & ROLE PERMISSIONS MODAL */}
       {isStaffModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-4 sm:p-6 border border-[#E3D8CE] shadow-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden">
             
             {/* Modal Header */}
@@ -1135,7 +1195,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
               <button
                 onClick={() => setIsStaffModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer shrink-0"
+                className="w-11 h-11 rounded-full bg-[#FAF6F3] border border-[#E3D8CE] flex items-center justify-center text-stone-500 hover:text-[#2C221E] cursor-pointer shrink-0"
               >
                 ✕
               </button>
@@ -1348,14 +1408,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsStaffModalOpen(false)}
-                className="px-5 py-2.5 text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer"
+                className="px-5 py-2.5 min-h-[44px] text-xs font-bold text-stone-500 hover:text-[#2C221E] cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveStaff}
-                className="px-6 py-2.5 bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full transition-all shadow-md cursor-pointer"
+                className="px-6 py-2.5 min-h-[44px] bg-[#2C221E] hover:bg-[#3D2F2A] text-white text-xs font-bold rounded-full transition-all shadow-md cursor-pointer"
               >
                 {editingStaff ? 'Save Staff & Permissions' : 'Create Staff Member'}
               </button>
@@ -1368,3 +1428,139 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     </section>
   );
 };
+
+// ── Shop Settings Sub-Component ──
+interface ShopSettingsProps {
+  shop: Shop | null;
+  addresses: Address[];
+  socialMedia: SocialMedia[];
+  onUpdateShop: (data: { name?: string; logo_url?: string }) => Promise<void>;
+  onAddAddress: (address: string) => Promise<void>;
+  onDeleteAddress: (id: string) => Promise<void>;
+  onAddSocialMedia: (media_name: string, link: string) => Promise<void>;
+  onDeleteSocialMedia: (id: string) => Promise<void>;
+}
+
+function ShopSettings({ shop, addresses, socialMedia, onUpdateShop, onAddAddress, onDeleteAddress, onAddSocialMedia, onDeleteSocialMedia }: ShopSettingsProps) {
+  const [name, setName] = useState(shop?.name || '');
+  const [logoUrl, setLogoUrl] = useState(shop?.logo_url || '');
+  const [newAddress, setNewAddress] = useState('');
+  const [newSmName, setNewSmName] = useState<'instagram' | 'facebook' | 'whatsapp'>('instagram');
+  const [newSmLink, setNewSmLink] = useState('');
+
+  const handleSaveShop = async () => {
+    await onUpdateShop({ name, logo_url: logoUrl });
+  };
+
+  const handleAddAddress = async () => {
+    if (!newAddress.trim()) return;
+    await onAddAddress(newAddress.trim());
+    setNewAddress('');
+  };
+
+  const handleAddSocialMedia = async () => {
+    if (!newSmLink.trim()) return;
+    await onAddSocialMedia(newSmName, newSmLink.trim());
+    setNewSmLink('');
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-2xs space-y-4">
+        <h3 className="font-serif text-xl font-bold text-[#2C221E]">Shop Details</h3>
+        <div>
+          <label className="block text-xs font-bold text-[#2C221E] mb-1">Shop Name</label>
+          <input value={name} onChange={e => setName(e.target.value)} className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-[#2C221E] mb-1">Logo URL</label>
+          <input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs" />
+          {logoUrl && <img src={logoUrl} alt="logo preview" className="w-14 h-14 rounded-2xl object-cover mt-2 border border-[#E3D8CE]" />}
+        </div>
+        <button onClick={handleSaveShop} className="px-5 py-2.5 min-h-[44px] bg-[#2C221E] text-white text-xs font-bold rounded-full cursor-pointer hover:bg-[#3D2F2A]">Save Shop</button>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-2xs space-y-4">
+        <h3 className="font-serif text-xl font-bold text-[#2C221E]">Addresses</h3>
+        <div className="space-y-2">
+          {addresses.map(a => (
+            <div key={a.id} className="flex items-center justify-between gap-2 p-3 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]">
+              <span className="text-xs text-[#52433A]">{a.address}</span>
+              <button onClick={() => onDeleteAddress(a.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input value={newAddress} onChange={e => setNewAddress(e.target.value)} placeholder="Enter address..." className="flex-1 p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs" />
+          <button onClick={handleAddAddress} className="px-4 py-2 min-h-[44px] bg-[#2C221E] text-white text-xs font-bold rounded-full cursor-pointer hover:bg-[#3D2F2A] flex items-center gap-1"><PlusCircle className="w-3.5 h-3.5" /> Add</button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-2xs space-y-4">
+        <h3 className="font-serif text-xl font-bold text-[#2C221E]">Social Media</h3>
+        <div className="space-y-2">
+          {socialMedia.map(sm => (
+            <div key={sm.id} className="flex items-center justify-between gap-2 p-3 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE]">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase text-[#A87B51]">{sm.media_name}</span>
+                <span className="text-xs text-[#52433A] truncate max-w-[200px] sm:max-w-[400px]">{sm.link}</span>
+              </div>
+              <button onClick={() => onDeleteSocialMedia(sm.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select value={newSmName} onChange={e => setNewSmName(e.target.value as any)} className="p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs">
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
+          <input value={newSmLink} onChange={e => setNewSmLink(e.target.value)} placeholder="https://..." className="flex-1 p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs" />
+          <button onClick={handleAddSocialMedia} className="px-4 py-2 min-h-[44px] bg-[#2C221E] text-white text-xs font-bold rounded-full cursor-pointer hover:bg-[#3D2F2A] flex items-center gap-1"><PlusCircle className="w-3.5 h-3.5" /> Add</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── QR Generator Sub-Component ──
+function QrGenerator() {
+  const [baseUrl, setBaseUrl] = useState(window.location.origin + '/?book=true');
+  const bookingUrl = baseUrl.includes('book=true') ? baseUrl : baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'book=true';
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(bookingUrl)}`;
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-2xs space-y-4">
+        <h3 className="font-serif text-xl font-bold text-[#2C221E]">QR Code for Booking</h3>
+        <p className="text-xs text-[#68584E]">
+          Print this QR and display at your salon. Customers scan it with their phone camera, log in, and book an appointment directly.
+        </p>
+
+        <div>
+          <label className="block text-xs font-bold text-[#2C221E] mb-1">Booking URL</label>
+          <input
+            value={bookingUrl}
+            onChange={e => setBaseUrl(e.target.value)}
+            className="w-full p-2.5 bg-[#FAF6F3] rounded-xl border border-[#E3D8CE] text-xs font-mono"
+          />
+        </div>
+
+        <div className="flex justify-center bg-white p-6 rounded-2xl border border-[#E3D8CE]">
+          <img src={qrSrc} alt="QR Code for booking" className="w-64 h-64" />
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-800">
+          <p className="font-bold mb-1">How it works:</p>
+          <ol className="list-decimal list-inside space-y-1 text-amber-700">
+            <li>Customer scans QR with phone camera</li>
+            <li>They are asked to login (or sign up)</li>
+            <li>After login, booking form opens automatically</li>
+            <li>They pick service, staff, date & time</li>
+            <li>Booking is confirmed and shows in their list</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -103,3 +103,22 @@ export interface SupabaseConfig {
   anonKey: string;
   isConnected: boolean;
 }
+
+export interface Shop {
+  id: string;
+  name: string;
+  logo_url?: string;
+}
+
+export interface Address {
+  id: string;
+  shop_id: string;
+  address: string;
+}
+
+export interface SocialMedia {
+  id: string;
+  shop_id: string;
+  media_name: 'instagram' | 'facebook' | 'whatsapp';
+  link: string;
+}

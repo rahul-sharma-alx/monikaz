@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserRole, Service, Staff, Booking, Review, Notification, BookingStatus, SupabaseConfig, Profile } from './types';
+import { UserRole, Service, Staff, Booking, Review, Notification, BookingStatus, SupabaseConfig, Profile, Shop, Address, SocialMedia } from './types';
 import { api } from './services/api';
-import { getSupabaseCredentials, saveSupabaseCredentials } from './lib/supabase';
+import { getSupabaseCredentials, saveSupabaseCredentials, setupAuthListener, onAuthChange, getSupabaseClient, signOut } from './lib/supabase';
 
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -62,6 +62,9 @@ export default function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
+  // QR booking flow
+  const [pendingBookingAfterAuth, setPendingBookingAfterAuth] = useState(false);
+
   // Realtime & Notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(true);
@@ -76,15 +79,21 @@ export default function App() {
     };
   });
 
+  // Shop data
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
+
   // Load Data
   const loadData = useCallback(async () => {
     try {
-      const [sData, stData, bData, rData, eData] = await Promise.all([
+      const [sData, stData, bData, rData, eData, shopData] = await Promise.all([
         api.getServices(),
         api.getStaff(),
-        api.getBookings(),
-        api.getReviews(),
-        api.getEmailLogs().catch(() => [])
+        api.getBookings(currentUser),
+        api.getReviews(currentUser),
+        api.getEmailLogs().catch(() => []),
+        api.getShop().catch(() => null)
       ]);
 
       setServices(sData);
@@ -92,10 +101,30 @@ export default function App() {
       setBookings(bData);
       setReviews(rData);
       setEmailLogs(eData);
+      if (shopData) {
+        setShop(shopData.shop);
+        setAddresses(shopData.addresses);
+        setSocialMedia(shopData.social_media);
+      }
     } catch (err) {
       console.error('Failed to load initial parlour data:', err);
     }
-  }, []);
+  }, [currentUser]);
+
+  // Handle ?book=true QR scan flow
+  useEffect(() => {
+    if (window.location.search.includes('book=true')) {
+      if (currentUser) {
+        setPendingBookingAfterAuth(false);
+        setPreselectedService(null);
+        setPreselectedStaff(null);
+        setIsBookingModalOpen(true);
+      } else {
+        setPendingBookingAfterAuth(true);
+        setIsAuthModalOpen(true);
+      }
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     loadData();
@@ -141,6 +170,36 @@ export default function App() {
 
     return () => unsubscribe();
   }, [loadData]);
+
+  // Supabase auth state listener (Google OAuth)
+  useEffect(() => {
+    setupAuthListener();
+    const unsub = onAuthChange(async (user) => {
+      if (user) {
+        const supabase = getSupabaseClient();
+        if (!supabase) return;
+        const { data: existing, error: fetchErr } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+        if (existing) {
+          const p: Profile = { id: existing.id, full_name: existing.full_name, phone: existing.phone || '', email: existing.email, role: existing.role, avatar_url: existing.avatar_url, created_at: existing.created_at };
+          setCurrentUser(p); setCurrentRole(p.role);
+          localStorage.setItem('monikaz_user', JSON.stringify(p));
+        } else {
+          const avatar_url = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
+          const newProfile = {
+            id: user.id, full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            phone: '', email: user.email || '', role: 'customer' as UserRole,
+            avatar_url,
+          };
+          const { error } = await supabase.from('profiles').insert([{ ...newProfile, created_at: new Date().toISOString() }]);
+          if (!error) {
+            setCurrentUser(newProfile as Profile); setCurrentRole('customer');
+            localStorage.setItem('monikaz_user', JSON.stringify(newProfile));
+          }
+        }
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const addNotification = (notif: Notification) => {
     setNotifications(prev => [notif, ...prev]);
@@ -190,23 +249,39 @@ export default function App() {
   };
 
   const handleCreateService = async (srvData: Partial<Service>) => {
-    const created = await api.createService(srvData);
-    setServices(prev => [created, ...prev]);
+    try {
+      const created = await api.createService(srvData);
+      setServices(prev => [created, ...prev]);
+    } catch (err: any) {
+      addNotification({ id: `err-${Date.now()}`, title: 'Failed to create service', message: err?.message || 'Unknown error', timestamp: new Date().toISOString(), read: false, type: 'system' });
+    }
   };
 
   const handleUpdateService = async (id: string, srvData: Partial<Service>) => {
-    const updated = await api.updateService(id, srvData);
-    setServices(prev => prev.map(s => s.id === id ? updated : s));
+    try {
+      const updated = await api.updateService(id, srvData);
+      setServices(prev => prev.map(s => s.id === id ? updated : s));
+    } catch (err: any) {
+      addNotification({ id: `err-${Date.now()}`, title: 'Failed to update service', message: err?.message || 'Unknown error', timestamp: new Date().toISOString(), read: false, type: 'system' });
+    }
   };
 
   const handleCreateStaff = async (stfData: Partial<Staff>) => {
-    const created = await api.createStaff(stfData);
-    setStaffList(prev => [...prev, created]);
+    try {
+      const created = await api.createStaff(stfData);
+      setStaffList(prev => [...prev, created]);
+    } catch (err: any) {
+      addNotification({ id: `err-${Date.now()}`, title: 'Failed to create staff', message: err?.message || 'Unknown error', timestamp: new Date().toISOString(), read: false, type: 'system' });
+    }
   };
 
   const handleUpdateStaff = async (id: string, stfData: Partial<Staff>) => {
-    const updated = await api.updateStaff(id, stfData);
-    setStaffList(prev => prev.map(st => st.id === id ? updated : st));
+    try {
+      const updated = await api.updateStaff(id, stfData);
+      setStaffList(prev => prev.map(st => st.id === id ? updated : st));
+    } catch (err: any) {
+      addNotification({ id: `err-${Date.now()}`, title: 'Failed to update staff', message: err?.message || 'Unknown error', timestamp: new Date().toISOString(), read: false, type: 'system' });
+    }
   };
 
   const handleOpenReviewModal = (booking: Booking) => {
@@ -235,6 +310,32 @@ export default function App() {
     setReviews(prev => prev.map(r => r.id === reviewId ? updated : r));
   };
 
+  // Shop Handlers
+  const handleUpdateShop = async (data: { name?: string; logo_url?: string }) => {
+    const updated = await api.updateShop(data);
+    setShop(prev => prev ? { ...prev, ...updated } : updated);
+  };
+
+  const handleAddAddress = async (address: string) => {
+    const addr = await api.addAddress(address);
+    setAddresses(prev => [...prev, addr]);
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    await api.deleteAddress(id);
+    setAddresses(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleAddSocialMedia = async (media_name: string, link: string) => {
+    const sm = await api.addSocialMedia(media_name, link);
+    setSocialMedia(prev => [...prev, sm]);
+  };
+
+  const handleDeleteSocialMedia = async (id: string) => {
+    await api.deleteSocialMedia(id);
+    setSocialMedia(prev => prev.filter(s => s.id !== id));
+  };
+
   // Auth Handlers
   const handleLogin = (profile: Profile) => {
     setCurrentUser(profile);
@@ -242,12 +343,19 @@ export default function App() {
     localStorage.setItem('monikaz_user', JSON.stringify(profile));
     setIsAuthModalOpen(false);
     setRequiredRoleForAdmin(false);
+    if (pendingBookingAfterAuth) {
+      setPendingBookingAfterAuth(false);
+      setPreselectedService(null);
+      setPreselectedStaff(null);
+      setIsBookingModalOpen(true);
+    }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentRole('customer');
     localStorage.removeItem('monikaz_user');
+    signOut();
     if (activeTab === 'admin') {
       setActiveTab('services');
     }
@@ -311,6 +419,7 @@ export default function App() {
             setRequiredRoleForAdmin(false);
             setIsAuthModalOpen(true);
           }}
+          shop={shop}
         />
 
         {/* Main Content Render */}
@@ -383,12 +492,20 @@ export default function App() {
               onRespondToReview={handleRespondToReview}
               supabaseConfig={supabaseConfig}
               onSaveSupabaseCredentials={handleSaveSupabaseCredentialsHandler}
+              shop={shop}
+              addresses={addresses}
+              socialMedia={socialMedia}
+              onUpdateShop={handleUpdateShop}
+              onAddAddress={handleAddAddress}
+              onDeleteAddress={handleDeleteAddress}
+              onAddSocialMedia={handleAddSocialMedia}
+              onDeleteSocialMedia={handleDeleteSocialMedia}
             />
           )}
         </main>
 
         {/* Footer */}
-        <Footer />
+        <Footer shop={shop} addresses={addresses} socialMedia={socialMedia} />
 
         {/* Interactive Booking Wizard Modal */}
         <BookingFlowModal

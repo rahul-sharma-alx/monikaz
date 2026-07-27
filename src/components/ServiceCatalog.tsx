@@ -151,7 +151,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[42px] flex items-center justify-center shrink-0 ${
+            className={`px-4 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[44px] flex items-center justify-center shrink-0 ${
               selectedCategory === cat
                 ? 'bg-[#2C221E] text-white border border-[#2C221E] shadow-xs'
                 : 'bg-white text-[#68584E] border border-[#E3D8CE] hover:border-[#A87B51] hover:text-[#2C221E]'
@@ -166,7 +166,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
       <div className={`space-y-4 mb-8 bg-[#FAF6F3] p-4 rounded-3xl border border-[#E3D8CE] transition-all ${
         isMobileFilterOpen ? 'block animate-in fade-in slide-in-from-top-2 duration-200' : 'hidden md:block'
       }`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           
           {/* Duration Filter Pills */}
           <div>
@@ -177,7 +177,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5 bg-white p-1 rounded-2xl border border-[#E3D8CE]">
               <button
                 onClick={() => setDurationFilter('all')}
-                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[38px] ${
+                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[44px] ${
                   durationFilter === 'all'
                     ? 'bg-[#2C221E] text-white font-bold'
                     : 'text-[#68584E] hover:bg-[#F2ECE6]'
@@ -187,7 +187,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               </button>
               <button
                 onClick={() => setDurationFilter('under30')}
-                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[38px] ${
+                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[44px] ${
                   durationFilter === 'under30'
                     ? 'bg-[#2C221E] text-white font-bold'
                     : 'text-[#68584E] hover:bg-[#F2ECE6]'
@@ -197,7 +197,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               </button>
               <button
                 onClick={() => setDurationFilter('30to60')}
-                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[38px] ${
+                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[44px] ${
                   durationFilter === '30to60'
                     ? 'bg-[#2C221E] text-white font-bold'
                     : 'text-[#68584E] hover:bg-[#F2ECE6]'
@@ -207,7 +207,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               </button>
               <button
                 onClick={() => setDurationFilter('over60')}
-                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[38px] ${
+                className={`py-2 px-3 text-xs font-medium rounded-xl transition-colors cursor-pointer text-center min-h-[44px] ${
                   durationFilter === 'over60'
                     ? 'bg-[#2C221E] text-white font-bold'
                     : 'text-[#68584E] hover:bg-[#F2ECE6]'
@@ -400,7 +400,7 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
               />
               <button
                 onClick={() => setDetailModalService(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black transition-colors"
+                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:bg-black transition-colors min-w-[44px] min-h-[44px]"
               >
                 ✕
               </button>

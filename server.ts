@@ -2,8 +2,8 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
-import { INITIAL_SERVICES, INITIAL_STAFF, INITIAL_BOOKINGS, INITIAL_REVIEWS, INITIAL_PROFILES } from './src/data/initialData';
-import { Service, Staff, Booking, Review, Profile } from './src/types';
+import { INITIAL_SERVICES, INITIAL_STAFF, INITIAL_BOOKINGS, INITIAL_REVIEWS, INITIAL_PROFILES, INITIAL_SHOP, INITIAL_ADDRESSES, INITIAL_SOCIAL_MEDIA } from './src/data/initialData';
+import { Service, Staff, Booking, Review, Profile, Shop, Address, SocialMedia } from './src/types';
 
 const PORT = 3000;
 const app = express();
@@ -21,6 +21,9 @@ interface AppStore {
   reviews: Review[];
   profiles: Profile[];
   emailLogs: { id: string; to: string; subject: string; body: string; sent_at: string }[];
+  shops: Shop[];
+  addresses: Address[];
+  social_media: SocialMedia[];
 }
 
 let store: AppStore = {
@@ -29,7 +32,10 @@ let store: AppStore = {
   bookings: [...INITIAL_BOOKINGS],
   reviews: [...INITIAL_REVIEWS],
   profiles: [...INITIAL_PROFILES],
-  emailLogs: []
+  emailLogs: [],
+  shops: [INITIAL_SHOP],
+  addresses: [...INITIAL_ADDRESSES],
+  social_media: [...INITIAL_SOCIAL_MEDIA]
 };
 
 // Ensure data persistence
@@ -331,7 +337,10 @@ app.patch('/api/bookings/:id/status', (req, res) => {
 
 // REVIEWS ROUTES
 app.get('/api/reviews', (req, res) => {
-  res.json(store.reviews);
+  const { customer_id } = req.query;
+  let list = [...store.reviews];
+  if (customer_id) list = list.filter(r => r.customer_id === customer_id);
+  res.json(list);
 });
 
 app.post('/api/reviews', (req, res) => {
@@ -410,6 +419,51 @@ app.post('/api/reviews/:id/respond', (req, res) => {
 // EMAIL LOGS ROUTE
 app.get('/api/email-logs', (req, res) => {
   res.json(store.emailLogs);
+});
+
+// SHOP ROUTES
+app.get('/api/shop', (req, res) => {
+  const shop = store.shops[0] || null;
+  const addresses = store.addresses.filter(a => a.shop_id === shop?.id);
+  const social_media = store.social_media.filter(s => s.shop_id === shop?.id);
+  res.json({ shop, addresses, social_media });
+});
+
+app.put('/api/shop', (req, res) => {
+  const { name, logo_url } = req.body;
+  if (store.shops.length === 0) {
+    store.shops.push({ id: 'shop-1', name, logo_url });
+  } else {
+    store.shops[0] = { ...store.shops[0], name, logo_url };
+  }
+  saveStore();
+  res.json(store.shops[0]);
+});
+
+app.post('/api/shop/addresses', (req, res) => {
+  const addr = { id: `addr-${Date.now()}`, shop_id: 'shop-1', address: req.body.address };
+  store.addresses.push(addr);
+  saveStore();
+  res.status(201).json(addr);
+});
+
+app.delete('/api/shop/addresses/:id', (req, res) => {
+  store.addresses = store.addresses.filter(a => a.id !== req.params.id);
+  saveStore();
+  res.json({ success: true });
+});
+
+app.post('/api/shop/social-media', (req, res) => {
+  const sm = { id: `sm-${Date.now()}`, shop_id: 'shop-1', media_name: req.body.media_name, link: req.body.link };
+  store.social_media.push(sm);
+  saveStore();
+  res.status(201).json(sm);
+});
+
+app.delete('/api/shop/social-media/:id', (req, res) => {
+  store.social_media = store.social_media.filter(s => s.id !== req.params.id);
+  saveStore();
+  res.json({ success: true });
 });
 
 // START EXPRESS SERVER & MOUNT VITE

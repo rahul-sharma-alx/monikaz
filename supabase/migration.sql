@@ -1,0 +1,192 @@
+-- Monikaz Parlour — Supabase Migration
+-- Run this in your Supabase project SQL Editor (one time).
+
+drop table if exists public.reviews cascade;
+drop table if exists public.bookings cascade;
+drop table if exists public.services cascade;
+drop table if exists public.staff cascade;
+drop table if exists public.profiles cascade;
+drop table if exists public.social_media cascade;
+drop table if exists public.addresses cascade;
+drop table if exists public.shops cascade;
+
+-- 1. PROFILES (id matches auth.users.id from Google OAuth etc.)
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  full_name text not null,
+  phone text,
+  email text,
+  role text not null default 'customer' check (role in ('customer','staff','manager','admin')),
+  avatar_url text,
+  created_at timestamptz default now()
+);
+
+-- 2. SERVICES
+create table if not exists public.services (
+  id text primary key,
+  name text not null,
+  description text,
+  price numeric(10,2) not null,
+  duration_minutes int not null,
+  category text not null,
+  image_url text,
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
+-- 3. STAFF
+create table if not exists public.staff (
+  id text primary key,
+  full_name text not null,
+  bio text,
+  specialties text[],
+  photo_url text,
+  is_active boolean default true,
+  role text,
+  email text,
+  phone text,
+  rating numeric(3,2) default 5.0,
+  reviews_count int default 0,
+  created_at timestamptz default now()
+);
+
+-- 4. BOOKINGS
+create table if not exists public.bookings (
+  id text primary key,
+  customer_id text not null,
+  customer_name text not null,
+  customer_phone text,
+  customer_email text,
+  service_id text not null,
+  service_name text,
+  service_price numeric(10,2),
+  service_duration int,
+  staff_id text,
+  staff_name text,
+  booking_date date not null,
+  start_time time not null,
+  end_time time not null,
+  status text not null default 'pending' check (status in ('pending','confirmed','in_progress','completed','cancelled','no_show')),
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 5. REVIEWS
+create table if not exists public.reviews (
+  id text primary key,
+  booking_id text unique not null,
+  customer_id text not null,
+  customer_name text,
+  service_id text,
+  service_name text,
+  staff_id text,
+  staff_name text,
+  rating int not null check (rating between 1 and 5),
+  comment text,
+  admin_response text,
+  created_at timestamptz default now()
+);
+
+-- 6. SHOPS
+create table if not exists public.shops (
+  id text primary key default 'shop-1',
+  name text not null,
+  logo_url text
+);
+
+-- 7. ADDRESSES
+create table if not exists public.addresses (
+  id text primary key,
+  shop_id text not null references public.shops(id) on delete cascade,
+  address text not null
+);
+
+-- 8. SOCIAL MEDIA
+create table if not exists public.social_media (
+  id text primary key,
+  shop_id text not null references public.shops(id) on delete cascade,
+  media_name text not null check (media_name in ('instagram','facebook','whatsapp')),
+  link text not null
+);
+
+-- ── ROW LEVEL SECURITY ──
+-- ponytail: fully permissive for MVP — the app code enforces business rules.
+-- Lock down auth.uid() checks once real auth is in place.
+
+alter table public.profiles enable row level security;
+alter table public.services enable row level security;
+alter table public.staff enable row level security;
+alter table public.bookings enable row level security;
+alter table public.reviews enable row level security;
+alter table public.shops enable row level security;
+alter table public.addresses enable row level security;
+alter table public.social_media enable row level security;
+
+-- Profiles: public read, owner can upsert
+create policy "profiles_read" on public.profiles for select using (true);
+create policy "profiles_insert" on public.profiles for insert with check (true);
+create policy "profiles_update" on public.profiles for update using (auth.uid() = id);
+
+-- Services: public read, admin write (via service_role on server)
+create policy "services_read" on public.services for select using (true);
+create policy "services_write" on public.services for all using (true);
+
+-- Staff: public read, admin write
+create policy "staff_read" on public.staff for select using (true);
+create policy "staff_write" on public.staff for all using (true);
+
+-- Bookings: full public access (app handles validation server-side)
+create policy "bookings_all" on public.bookings for all using (true) with check (true);
+
+-- Reviews: full public access
+create policy "reviews_all" on public.reviews for all using (true) with check (true);
+
+-- Shops: public read, admin write
+create policy "shops_read" on public.shops for select using (true);
+create policy "shops_write" on public.shops for all using (true);
+
+-- Addresses: public read, admin write
+create policy "addresses_read" on public.addresses for select using (true);
+create policy "addresses_write" on public.addresses for all using (true);
+
+-- Social Media: public read, admin write
+create policy "social_media_read" on public.social_media for select using (true);
+create policy "social_media_write" on public.social_media for all using (true);
+
+-- ── SEED DATA ──
+
+insert into public.services (id, name, description, price, duration_minutes, category, image_url, is_active) values
+  ('srv-1', 'Keratin & Gloss Hair Treatment', 'Deep hair repair with organic keratin. Makes hair silky, smooth and frizz-free for up to 4 months.', 1800, 90, 'Hair & Styling', 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-2', 'Balayage & Hair Colouring', 'Hand-painted highlights customised for your skin tone and hair length. Natural looking colour.', 2200, 120, 'Hair & Styling', 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-3', '24K Gold Glow Facial', 'Luxury facial with real 24K gold foil, hyaluronic serum and LED therapy. Gives instant glow.', 1500, 75, 'Facial & Skincare', 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-4', 'Deep Clean Hydra Facial', 'Multi-step deep cleansing facial with suction, exfoliation, and antioxidant hydration.', 1250, 60, 'Facial & Skincare', 'https://images.unsplash.com/photo-1512290900673-70020083049b?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-5', 'Gel Manicure & Pedicure Combo', 'Complete nail shaping, cuticle care, sugar scrub massage and long-lasting gel polish.', 950, 60, 'Nails & Hands', 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-6', 'Bridal Makeup & Hair Styling', 'Complete bridal package with HD makeup, mink lashes, hair styling and jewellery fitting.', 3500, 150, 'Makeup & Bridal', 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=800', true),
+  ('srv-7', 'Aromatherapy Body Massage', 'Deep tissue massage with essential oils to release body tension and calm your mind.', 1400, 80, 'Body Spa', 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800', true)
+on conflict (id) do nothing;
+
+insert into public.staff (id, full_name, bio, specialties, photo_url, is_active, role, email, phone, rating, reviews_count) values
+  ('stf-1', 'Monika Sharma', 'Founder & Senior Hair Stylist with 14+ years experience in Balayage, Keratin and bridal hairstyles.', array['Balayage & Hair Colour','Keratin Treatment','Bridal Hair'], 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', true, 'admin', 'monika@monikazparlour.com', '+91 98765 00000', 4.9, 48),
+  ('stf-2', 'Aisha Patel', 'Senior Skin Specialist & Parlour Manager. Expert in Gold facials, anti-aging and sensitive skin care.', array['24K Gold Facial','Hydra Facial','Chemical Peel'], 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400', true, 'manager', 'aisha.p@monikazparlour.com', '+91 98765 11111', 4.95, 39),
+  ('stf-3', 'Neha Kapoor', 'Master Nail Artist specialising in gel extensions, nail art, Russian manicure and hand spa.', array['Gel Manicure','Nail Art','Russian Manicure'], 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400', true, 'staff', 'neha.k@monikazparlour.com', '+91 98765 22222', 4.88, 27),
+  ('stf-4', 'Ananya Verma', 'Celebrity Makeup Artist. Expert in HD airbrush, bridal makeup, natural glow and party looks.', array['Bridal Makeup','Airbrush Makeup','Evening Glam'], 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', true, 'staff', 'ananya.v@monikazparlour.com', '+91 98765 33333', 5.0, 32),
+  ('stf-5', 'Priya Nair', 'Certified Spa & Body Therapist. Specialises in deep tissue massage, aromatherapy and Ayurvedic treatments.', array['Deep Tissue Massage','Aromatherapy','Body Scrub'], 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400', true, 'staff', 'priya.n@monikazparlour.com', '+91 98765 44444', 4.92, 21)
+on conflict (id) do nothing;
+
+insert into public.shops (id, name, logo_url) values
+  ('shop-1', 'Monikaz Parlour', 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200')
+on conflict (id) do nothing;
+
+insert into public.addresses (id, shop_id, address) values
+  ('addr-1', 'shop-1', '123, Linking Road, Bandra West, Mumbai - 400050')
+on conflict (id) do nothing;
+
+insert into public.social_media (id, shop_id, media_name, link) values
+  ('sm-1', 'shop-1', 'instagram', 'https://instagram.com/monikazparlour'),
+  ('sm-2', 'shop-1', 'facebook', 'https://facebook.com/monikazparlour')
+on conflict (id) do nothing;
+
+-- Enable Realtime for live status updates
+alter publication supabase_realtime add table public.bookings;
+alter publication supabase_realtime add table public.reviews;

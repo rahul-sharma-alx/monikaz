@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Profile, UserRole } from '../types';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, getSupabaseClient } from '../lib/supabase';
 import { ShieldCheck, User, Mail, Lock, Phone, Sparkles, CheckCircle2, AlertCircle, ArrowRight, LogOut, KeyRound } from 'lucide-react';
 
 interface AuthModalProps {
@@ -33,35 +34,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setMessage(null);
-    setTimeout(() => {
+    try {
+      await signInWithGoogle();
+      // Page redirects to Google OAuth; on return App.tsx handles the session
+    } catch (err: any) {
       setLoading(false);
-      const googleProfile: Profile = {
-        id: `google-user-${Date.now()}`,
-        full_name: role === 'admin' ? 'Monika Sharma (Google Verified Admin)' : 'Ananya Roy (Google User)',
-        email: role === 'admin' ? 'monika.owner@gmail.com' : 'ananya.roy.google@gmail.com',
-        phone: '+91 98765 12345',
-        role: role,
-        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-        created_at: new Date().toISOString(),
-      };
-      onLogin(googleProfile);
-      setMessage({
-        type: 'success',
-        text: `Successfully authenticated via Google as ${googleProfile.full_name}!`,
-      });
-      setTimeout(onClose, 600);
-    }, 600);
+      setMessage({ type: 'error', text: err?.message || 'Google login failed. Ensure Supabase is configured with Google OAuth.' });
+    }
   };
 
   const handleDemoCustomerLogin = () => {
     onLogin({
       id: 'user-c1',
-      full_name: 'Sophia Williams',
+      full_name: 'Priya Sharma',
       phone: '+91 98765 43210',
-      email: 'sophia.w@example.com',
+      email: 'priya.sharma@email.com',
       role: 'customer',
       avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
       created_at: new Date().toISOString(),
@@ -73,15 +63,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleDemoStaffLogin = () => {
     onLogin({
       id: 'user-s1',
-      full_name: 'Elena Rostova (Staff)',
+      full_name: 'Neha Kapoor (Staff)',
       phone: '+91 98765 22222',
-      email: 'elena.r@monikazparlour.com',
+      email: 'neha.k@monikazparlour.com',
       role: 'staff',
       permissions: ['manage_bookings', 'manage_reviews'],
       avatar_url: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=300',
       created_at: new Date().toISOString(),
     });
-    setMessage({ type: 'success', text: 'Logged in as Elena Rostova (Staff)' });
+    setMessage({ type: 'success', text: 'Logged in as Neha Kapoor (Staff)' });
     setTimeout(onClose, 600);
   };
 
@@ -115,7 +105,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTimeout(onClose, 600);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
@@ -126,13 +116,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (mode === 'forgot') {
       setLoading(true);
-      setTimeout(() => {
+      try {
+        const supabase = getSupabaseClient();
+        if (supabase) await supabase.auth.resetPasswordForEmail(email);
         setLoading(false);
-        setMessage({
-          type: 'success',
-          text: `Password reset instructions have been dispatched to ${email}. Please check your inbox.`,
-        });
-      }, 800);
+        setMessage({ type: 'success', text: `Password reset link sent to ${email}.` });
+      } catch {
+        setLoading(false);
+        setMessage({ type: 'error', text: 'Failed to send reset email. Ensure Supabase is configured.' });
+      }
       return;
     }
 
@@ -147,40 +139,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      if (mode === 'signup') {
+        await signUpWithEmail(email, password, fullName);
+      } else {
+        await signInWithEmail(email, password);
+      }
       setLoading(false);
-      const newProfile: Profile = {
-        id: `user-${Date.now()}`,
-        full_name: mode === 'signup' ? fullName : (role === 'admin' ? 'Monika Sharma (Owner)' : email.split('@')[0]),
-        email: email,
-        phone: phone || '+91 98765 00000',
-        role: role,
-        avatar_url: role === 'admin'
-          ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300'
-          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-        created_at: new Date().toISOString(),
-      };
-
-      onLogin(newProfile);
-      setMessage({
-        type: 'success',
-        text: mode === 'signup'
-          ? 'Account created! Verification link sent to email. Signed in automatically.'
-          : `Welcome back, ${newProfile.full_name}!`,
-      });
-      setTimeout(onClose, 800);
-    }, 700);
+      // Auth state listener in App.tsx handles profile creation/loading
+      setMessage({ type: 'success', text: mode === 'signup' ? 'Account created! Check email for verification.' : 'Signed in successfully!' });
+      setTimeout(onClose, 600);
+    } catch (err: any) {
+      setLoading(false);
+      setMessage({ type: 'error', text: err?.message || 'Authentication failed.' });
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-md w-full border border-[#E3D8CE] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-8">
         
         {/* Header */}
         <div className="bg-[#2C221E] text-white p-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
           >
             ✕
           </button>
@@ -444,7 +427,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 >
                   <div>
                     <span className="block font-bold text-[#2C221E]">Customer</span>
-                    <span className="block text-[9px] text-[#8A7568]">Sophia W.</span>
+                    <span className="block text-[9px] text-[#8A7568]">Priya S.</span>
                   </div>
                   <User className="w-3.5 h-3.5 text-[#A87B51]" />
                 </button>

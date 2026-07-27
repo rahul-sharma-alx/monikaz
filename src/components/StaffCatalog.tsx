@@ -43,11 +43,11 @@ export const StaffCatalog: React.FC<StaffCatalogProps> = ({ staffList, onBookWit
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-4">
                 <div>
                   <div className="flex items-center gap-1.5 text-xs text-[#A87B51] font-semibold">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Certified Senior Specialist</span>
+                    <span>Experienced Professional</span>
                   </div>
                   <h3 className="font-serif text-2xl font-bold text-[#2C221E] mt-1">
                     {staff.full_name}
@@ -78,7 +78,7 @@ export const StaffCatalog: React.FC<StaffCatalogProps> = ({ staffList, onBookWit
             </div>
 
             {/* Action Footer */}
-            <div className="p-6 pt-0">
+            <div className="p-4 sm:p-6 pt-0">
               <button
                 onClick={() => onBookWithStaff(staff)}
                 className="w-full bg-[#2C221E] hover:bg-[#4A3933] text-white font-medium text-xs py-3 rounded-full transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-2xs"
