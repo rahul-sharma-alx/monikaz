@@ -17,6 +17,8 @@ self.addEventListener('fetch', e => {
   const { request } = e;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  // ponytail: skip non-http(s) schemes (chrome-extension, blob, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
   // ponytail: network-first for API/SSE, cache-first for everything else
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(networkFirst(request));
@@ -30,9 +32,13 @@ async function cacheFirst(request) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
+    // ponytail: don't cache HTML as scripts (Vercel catch-all returns index.html for missing files)
     if (response.ok) {
-      const cache = await caches.open(CACHE);
-      cache.put(request, response.clone());
+      const isHtmlScript = /\.(js|mjs)$/i.test(request.url) && response.headers.get('Content-Type')?.startsWith('text/html');
+      if (!isHtmlScript) {
+        const cache = await caches.open(CACHE);
+        cache.put(request, response.clone());
+      }
     }
     return response;
   } catch {
