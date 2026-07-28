@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles, Star, Shield, Search, ArrowRight, Award, ChevronDown } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
 
 interface HeroProps {
   onOpenBooking: () => void;
@@ -9,43 +9,56 @@ interface HeroProps {
   onSelectCategory: (cat: string) => void;
 }
 
+const containerVariants = {
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
 export const Hero: React.FC<HeroProps> = ({
   onOpenBooking,
   searchQuery,
   setSearchQuery,
   onSelectCategory,
 }) => {
+  const { scrollYProgress } = useScroll({ target: undefined, offset: ['start start', 'end start'] });
+  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
+  const glowOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
+
   return (
     <section id="hero-banner" className="relative bg-gradient-to-b from-[#FAF6F3] via-[#F4ECE6] to-[#FAF6F3] pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-[#E8DFD8] overflow-hidden min-h-[90vh] flex flex-col justify-center">
       
       {/* Decorative Background Glows */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#E8C5B8]/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
+      <motion.div style={{ opacity: glowOpacity }} className="absolute top-0 right-0 w-96 h-96 bg-[#E8C5B8]/20 rounded-full blur-3xl pointer-events-none" />
+      <motion.div style={{ opacity: glowOpacity }} className="absolute bottom-0 left-0 w-80 h-80 bg-[#C59B27]/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10 my-auto">
         
         {/* Left Copy & Search */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="lg:col-span-7 space-y-6"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAE1D8]/80 backdrop-blur-md border border-[#D9CCC0] text-[#5C4A3E] text-xs font-semibold tracking-wide uppercase shadow-2xs">
+          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAE1D8]/80 backdrop-blur-md border border-[#D9CCC0] text-[#5C4A3E] text-xs font-semibold tracking-wide uppercase shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
             <span>Premium Beauty & Wellness Salon</span>
-          </div>
+          </motion.div>
 
-          <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-[#2C221E] leading-tight">
+          <motion.h1 variants={itemVariants} className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-[#2C221E] leading-tight">
             Look Beautiful, <span className="italic font-normal text-[#A87B51]">Feel Confident</span> Every Day.
-          </h1>
+          </motion.h1>
 
-          <p className="text-[#68584E] text-base sm:text-lg max-w-2xl leading-relaxed">
+          <motion.p variants={itemVariants} className="text-[#68584E] text-base sm:text-lg max-w-2xl leading-relaxed">
             Expert hair styling, 24K gold facials, bridal makeup, gel manicure and relaxing body massage — all under one roof. Book your appointment today.
-          </p>
+          </motion.p>
 
           {/* Quick Search & Booking Controls */}
-          <div className="pt-2 max-w-xl">
+          <motion.div variants={itemVariants} className="pt-2 max-w-xl">
             <div className="flex flex-col sm:flex-row gap-3 p-2 bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-full border border-[#E3D8CE] shadow-lg">
               <div className="relative flex-1 flex items-center px-3">
                 <Search className="w-5 h-5 text-[#9C8B80] mr-2 shrink-0" />
@@ -65,10 +78,10 @@ export const Hero: React.FC<HeroProps> = ({
                 <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* Quick Category Shortcuts */}
-          <div className="pt-2 flex flex-wrap items-center gap-2 text-xs text-[#68584E]">
+          <motion.div variants={itemVariants} className="pt-2 flex flex-wrap items-center gap-2 text-xs text-[#68584E]">
             <span className="font-semibold text-[#2C221E]">Popular:</span>
             {['Hair & Styling', 'Facial & Skincare', 'Nails & Hands', 'Makeup & Bridal', 'Body Spa'].map((cat) => (
               <button
@@ -79,10 +92,10 @@ export const Hero: React.FC<HeroProps> = ({
                 {cat}
               </button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Trust Highlights */}
-          <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-[#E8DFD8]">
+          <motion.div variants={itemVariants} className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-[#E8DFD8]">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-[#F2ECE6] text-[#A87B51] flex items-center justify-center shrink-0">
                 <Award className="w-4 h-4" />
@@ -112,23 +125,24 @@ export const Hero: React.FC<HeroProps> = ({
                 <p className="text-[11px] text-[#8A7568]">Clean & Safe Products</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
         </motion.div>
 
         {/* Right Imagery Showcase */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
           className="lg:col-span-5 relative"
         >
           <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-stone-200">
-            <img
+            <motion.img
               src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1000"
               alt="Monikazz Salon & Academy Ambience"
               referrerPolicy="no-referrer"
-              className="w-full h-[380px] sm:h-[440px] object-cover hover:scale-105 transition-transform duration-700"
+              style={{ scale: imgScale }}
+              className="w-full h-[380px] sm:h-[440px] object-cover transition-transform duration-700"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 text-white">
               <span className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Popular Service</span>
@@ -138,7 +152,12 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
 
           {/* Floating Card Badge */}
-          <div className="absolute -bottom-5 -left-3 sm:-left-5 bg-white p-3.5 sm:p-4 rounded-2xl shadow-xl border border-[#E3D8CE] max-w-xs flex items-center gap-3">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute -bottom-5 -left-3 sm:-left-5 bg-white p-3.5 sm:p-4 rounded-2xl shadow-xl border border-[#E3D8CE] max-w-xs flex items-center gap-3"
+          >
             <div className="w-10 h-10 rounded-full bg-[#E8C5B8] flex items-center justify-center text-[#2C221E] font-bold text-sm shrink-0">
               MS
             </div>
@@ -154,16 +173,21 @@ export const Hero: React.FC<HeroProps> = ({
                 <span className="text-stone-500 ml-1">(48 reviews)</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
 
       </div>
 
       {/* Subtle Scroll Cue Indicator */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity pointer-events-none">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.7 }}
+        transition={{ delay: 1.2, duration: 0.6 }}
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 hover:opacity-100 transition-opacity pointer-events-none"
+      >
         <span className="text-[10px] uppercase font-bold tracking-widest text-[#8A7568]">Scroll for more</span>
         <ChevronDown className="w-4 h-4 text-[#A87B51] animate-bounce" />
-      </div>
+      </motion.div>
 
     </section>
   );

@@ -3,3 +3,8 @@
 /* ponytail: hide scrollbar globally, keep scroll */
 * { scrollbar-width: none; -ms-overflow-style: none; }
 *::-webkit-scrollbar { display: none; }
+
+/* ponytail: premium micro-interactions — tap scale, no highlight */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"] { transition: transform 150ms ease, box-shadow 150ms ease; }
+button:active, a:active, [role="button"]:active { transform: scale(0.97); }

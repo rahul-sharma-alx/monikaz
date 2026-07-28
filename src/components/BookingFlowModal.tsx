@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Service, Staff, Booking, Profile, Shop, SocialMedia, Address } from '../types';
 import { Calendar as CalendarIcon, Clock, User, CheckCircle, AlertCircle, Sparkles, ChevronRight, ArrowLeft, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { getTodayString } from '../data/initialData';
@@ -203,7 +204,15 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
         )}
 
         {/* Modal Content Steps */}
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto"
+        >
           
           {/* STEP 1: SERVICE & STAFF SELECTION */}
           {step === 1 && (
@@ -498,7 +507,8 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
             </div>
           )}
 
-        </div>
+        </motion.div>
+        </AnimatePresence>
 
         {/* Modal Footer Controls */}
         <div className="p-4 sm:p-6 bg-[#FAF6F3] border-t border-[#E8DFD8] flex items-center justify-between flex-shrink-0">

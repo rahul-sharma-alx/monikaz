@@ -568,7 +568,7 @@ export default function App() {
               />
 
               {/* Salon Hours & Available Times */}
-              <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+              <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 <div className="bg-white rounded-3xl border border-[#E3D8CE] p-5 sm:p-7 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                     <div>
@@ -609,7 +609,7 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-              </section>
+              </motion.section>
 
               {/* Interactive Transformation Reveal Slider */}
               <TransformationReveal />
@@ -667,7 +667,7 @@ export default function App() {
 
           {activeTab === 'contact' && (
             <motion.div key="contact" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
-              <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="max-w-4xl mx-auto px-4 py-8 space-y-6">
               <h2 className="font-serif text-3xl font-bold text-[#2C221E] flex items-center gap-2">
                 <Phone className="w-6 h-6 text-[#A87B51]" /> Contact Us
               </h2>
@@ -712,13 +712,13 @@ export default function App() {
                 <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                 <span>Visit us at our salon or reach out via WhatsApp for quick responses. We'd love to hear from you!</span>
               </div>
-            </div>
+              </motion.div>
             </motion.div>
           )}
 
           {activeTab === 'about' && (
             <motion.div key="about" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
-            <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="max-w-4xl mx-auto px-4 py-8 space-y-8">
               <h2 className="font-serif text-3xl font-bold text-[#2C221E]">About Monikazz Salon & Academy</h2>
 
               <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-sm space-y-5">
@@ -781,7 +781,7 @@ export default function App() {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
             </motion.div>
           )}
           </AnimatePresence>
