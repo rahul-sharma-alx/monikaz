@@ -170,16 +170,17 @@ export const api = {
 
   async createBooking(bookingData: Partial<Booking>): Promise<Booking> {
     invalidateCache('bookings');
+    const payload = { id: `bk-${Date.now()}`, ...bookingData };
     const supabase = getSupabaseClient();
     if (supabase) {
       try {
-        const { data, error } = await supabase.from('bookings').insert([bookingData]).select().single();
+        const { data, error } = await supabase.from('bookings').insert([payload]).select().single();
         if (!error && data) return data as Booking;
       } catch {}
     }
     return fetchApi<Booking>('/api/bookings', {
       method: 'POST',
-      body: JSON.stringify(bookingData),
+      body: JSON.stringify(payload),
     });
   },
 

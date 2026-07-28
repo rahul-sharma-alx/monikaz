@@ -1,14 +1,10 @@
--- Monikaz Parlour — Supabase Migration
--- Run this in your Supabase project SQL Editor (one time).
+-- UPDATE profiles
+-- SET role = 'admin'
+-- WHERE email = 'monikaz@gmail.com';
 
-drop table if exists public.reviews cascade;
-drop table if exists public.bookings cascade;
-drop table if exists public.services cascade;
-drop table if exists public.staff cascade;
-drop table if exists public.profiles cascade;
-drop table if exists public.social_media cascade;
-drop table if exists public.addresses cascade;
-drop table if exists public.shops cascade;
+-- Monikaz Parlour — Supabase Migration
+-- Safe to re-run. Uses IF NOT EXISTS / ON CONFLICT DO NOTHING everywhere.
+-- Does NOT drop existing tables, so existing data is preserved.
 
 -- 1. PROFILES (id matches auth.users.id from Google OAuth etc.)
 create table if not exists public.profiles (
@@ -126,7 +122,6 @@ create table if not exists public.price_history (
 
 -- ── ROW LEVEL SECURITY ──
 -- ponytail: fully permissive for MVP — the app code enforces business rules.
--- Lock down auth.uid() checks once real auth is in place.
 
 alter table public.profiles enable row level security;
 alter table public.services enable row level security;
@@ -137,36 +132,123 @@ alter table public.shops enable row level security;
 alter table public.addresses enable row level security;
 alter table public.social_media enable row level security;
 
--- Profiles: public read, owner can upsert
-create policy "profiles_read" on public.profiles for select using (true);
-create policy "profiles_insert" on public.profiles for insert with check (true);
-create policy "profiles_update" on public.profiles for update using (auth.uid() = id);
+-- Ensure RLS is enabled (keep your ALTER TABLEs above as-is)
 
--- Services: public read, admin write (via service_role on server)
-create policy "services_read" on public.services for select using (true);
-create policy "services_write" on public.services for all using (true);
+DO $$
+BEGIN
+  -- PROFILES
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='profiles' AND policyname='profiles_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY profiles_read ON public.profiles FOR SELECT USING (true);';
+  END IF;
 
--- Staff: public read, admin write
-create policy "staff_read" on public.staff for select using (true);
-create policy "staff_write" on public.staff for all using (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='profiles' AND policyname='profiles_insert'
+  ) THEN
+    EXECUTE 'CREATE POLICY profiles_insert ON public.profiles FOR INSERT WITH CHECK (true);';
+  END IF;
 
--- Bookings: full public access (app handles validation server-side)
-create policy "bookings_all" on public.bookings for all using (true) with check (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='profiles' AND policyname='profiles_update'
+  ) THEN
+    EXECUTE 'CREATE POLICY profiles_update ON public.profiles FOR UPDATE USING (auth.uid() = id);';
+  END IF;
 
--- Reviews: full public access
-create policy "reviews_all" on public.reviews for all using (true) with check (true);
+  -- SERVICES
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='services' AND policyname='services_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY services_read ON public.services FOR SELECT USING (true);';
+  END IF;
 
--- Shops: public read, admin write
-create policy "shops_read" on public.shops for select using (true);
-create policy "shops_write" on public.shops for all using (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='services' AND policyname='services_write'
+  ) THEN
+    EXECUTE 'CREATE POLICY services_write ON public.services FOR ALL USING (true);';
+  END IF;
 
--- Addresses: public read, admin write
-create policy "addresses_read" on public.addresses for select using (true);
-create policy "addresses_write" on public.addresses for all using (true);
+  -- STAFF
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='staff' AND policyname='staff_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY staff_read ON public.staff FOR SELECT USING (true);';
+  END IF;
 
--- Social Media: public read, admin write
-create policy "social_media_read" on public.social_media for select using (true);
-create policy "social_media_write" on public.social_media for all using (true);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='staff' AND policyname='staff_write'
+  ) THEN
+    EXECUTE 'CREATE POLICY staff_write ON public.staff FOR ALL USING (true);';
+  END IF;
+
+  -- BOOKINGS
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='bookings' AND policyname='bookings_all'
+  ) THEN
+    EXECUTE 'CREATE POLICY bookings_all ON public.bookings FOR ALL USING (true) WITH CHECK (true);';
+  END IF;
+
+  -- REVIEWS
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='reviews' AND policyname='reviews_all'
+  ) THEN
+    EXECUTE 'CREATE POLICY reviews_all ON public.reviews FOR ALL USING (true) WITH CHECK (true);';
+  END IF;
+
+  -- SHOPS
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='shops' AND policyname='shops_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY shops_read ON public.shops FOR SELECT USING (true);';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='shops' AND policyname='shops_write'
+  ) THEN
+    EXECUTE 'CREATE POLICY shops_write ON public.shops FOR ALL USING (true);';
+  END IF;
+
+  -- ADDRESSES
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='addresses' AND policyname='addresses_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY addresses_read ON public.addresses FOR SELECT USING (true);';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='addresses' AND policyname='addresses_write'
+  ) THEN
+    EXECUTE 'CREATE POLICY addresses_write ON public.addresses FOR ALL USING (true);';
+  END IF;
+
+  -- SOCIAL MEDIA
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='social_media' AND policyname='social_media_read'
+  ) THEN
+    EXECUTE 'CREATE POLICY social_media_read ON public.social_media FOR SELECT USING (true);';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname='public' AND tablename='social_media' AND policyname='social_media_write'
+  ) THEN
+    EXECUTE 'CREATE POLICY social_media_write ON public.social_media FOR ALL USING (true);';
+  END IF;
+END $$;
 
 -- ── SEED DATA ──
 
@@ -202,5 +284,28 @@ insert into public.social_media (id, shop_id, media_name, link) values
 on conflict (id) do nothing;
 
 -- Enable Realtime for live status updates
-alter publication supabase_realtime add table public.bookings;
-alter publication supabase_realtime add table public.reviews;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename  = 'bookings'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.bookings';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename  = 'reviews'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews';
+  END IF;
+END $$;

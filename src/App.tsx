@@ -224,20 +224,29 @@ export default function App() {
       if (user) {
         const supabase = getSupabaseClient();
         if (!supabase) return;
-        const { data: existing, error: fetchErr } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-        if (existing) {
-          const p: Profile = { id: existing.id, full_name: existing.full_name, phone: existing.phone || '', email: existing.email, role: existing.role, avatar_url: existing.avatar_url, created_at: existing.created_at };
-          setCurrentUser(p); setCurrentRole(p.role);
-          localStorage.setItem('monikaz_user', JSON.stringify(p));
-        } else {
+        try {
+          const { data: existing } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+          if (existing) {
+            const p: Profile = { id: existing.id, full_name: existing.full_name, phone: existing.phone || '', email: existing.email, role: existing.role, avatar_url: existing.avatar_url, created_at: existing.created_at };
+            setCurrentUser(p); setCurrentRole(p.role);
+            localStorage.setItem('monikaz_user', JSON.stringify(p));
+          } else {
+            throw null; // skip to upsert path
+          }
+        } catch {
           const avatar_url = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
           const newProfile = {
             id: user.id, full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
             phone: '', email: user.email || '', role: 'customer' as UserRole,
             avatar_url,
           };
-          const { error: insertErr } = await supabase.from('profiles').insert([{ ...newProfile, created_at: new Date().toISOString() }]);
-          if (insertErr) console.warn('Could not save profile to Supabase (profiles table missing?):', insertErr.message);
+          try {
+            const { error: upsertErr } = await supabase!.from('profiles').upsert(
+              { ...newProfile, created_at: new Date().toISOString() },
+              { onConflict: 'id' }
+            );
+            if (upsertErr) console.warn('Could not save profile to Supabase:', upsertErr.message);
+          } catch {}
           setCurrentUser(newProfile as Profile); setCurrentRole('customer');
           localStorage.setItem('monikaz_user', JSON.stringify(newProfile));
         }
