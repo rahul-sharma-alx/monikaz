@@ -3,6 +3,7 @@ import { UserRole, Service, Staff, Booking, Review, Notification, BookingStatus,
 import { api } from './services/api';
 import { getSupabaseCredentials, saveSupabaseCredentials, setupAuthListener, onAuthChange, getSupabaseClient, signOut } from './lib/supabase';
 import { Phone, MapPin, MessageCircle, Sparkles, Scissors } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -61,6 +62,7 @@ export default function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // UI Filters & Query State
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -98,6 +100,7 @@ export default function App() {
 
   // Load Data
   const loadData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const [sData, stData, bData, rData, eData, shopData] = await Promise.all([
         api.getServices(),
@@ -120,6 +123,8 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to load initial parlour data:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, [currentUser]);
 
@@ -474,8 +479,15 @@ export default function App() {
 
         {/* Main Content Render */}
         <main className="flex-1">
-          {activeTab === 'services' && (
-            <>
+          <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-48 bg-stone-100 rounded-3xl animate-pulse" />
+              ))}
+            </motion.div>
+          ) : activeTab === 'services' && (
+            <motion.div key="services" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
               <Hero
                 onOpenBooking={() => {
                   setPreselectedService(services.length > 0 ? services[0] : null);
@@ -559,28 +571,33 @@ export default function App() {
 
               {/* Interactive Transformation Reveal Slider */}
               <TransformationReveal />
-            </>
+            </motion.div>
           )}
 
           {activeTab === 'staff' && (
-            <StaffCatalog
-              staffList={staffList}
-              onBookWithStaff={handleOpenBookingWithStaff}
-            />
+            <motion.div key="staff" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
+              <StaffCatalog
+                staffList={staffList}
+                onBookWithStaff={handleOpenBookingWithStaff}
+              />
+            </motion.div>
           )}
 
           {activeTab === 'bookings' && (
-            <CustomerDashboard
-              bookings={bookings}
-              reviews={reviews}
-              onCancelBooking={handleCancelBooking}
-              onOpenReviewModal={handleOpenReviewModal}
-              emailLogs={emailLogs}
-            />
+            <motion.div key="bookings" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
+              <CustomerDashboard
+                bookings={bookings}
+                reviews={reviews}
+                onCancelBooking={handleCancelBooking}
+                onOpenReviewModal={handleOpenReviewModal}
+                emailLogs={emailLogs}
+              />
+            </motion.div>
           )}
 
           {activeTab === 'admin' && (
-            <AdminDashboard
+            <motion.div key="admin" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
+              <AdminDashboard
               currentUser={currentUser}
               services={services}
               staffList={staffList}
@@ -603,10 +620,12 @@ export default function App() {
               onAddSocialMedia={handleAddSocialMedia}
               onDeleteSocialMedia={handleDeleteSocialMedia}
             />
+            </motion.div>
           )}
 
           {activeTab === 'contact' && (
-            <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+            <motion.div key="contact" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
+              <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
               <h2 className="font-serif text-3xl font-bold text-[#2C221E] flex items-center gap-2">
                 <Phone className="w-6 h-6 text-[#A87B51]" /> Contact Us
               </h2>
@@ -652,9 +671,11 @@ export default function App() {
                 <span>Visit us at our salon or reach out via WhatsApp for quick responses. We'd love to hear from you!</span>
               </div>
             </div>
+            </motion.div>
           )}
 
           {activeTab === 'about' && (
+            <motion.div key="about" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
             <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
               <h2 className="font-serif text-3xl font-bold text-[#2C221E]">About Monikaz Parlour</h2>
 
@@ -719,7 +740,9 @@ export default function App() {
                 </div>
               </div>
             </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </main>
 
         {/* Footer */}

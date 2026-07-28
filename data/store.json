@@ -237,6 +237,63 @@
   ],
   "bookings": [
     {
+      "id": "bk-1785231236136",
+      "customer_id": "user-c1",
+      "customer_name": "Sophia Williams",
+      "customer_phone": "+1 (555) 234-5678",
+      "customer_email": "sophia.w@example.com",
+      "service_id": "srv-1785187893763",
+      "service_name": "New Service ",
+      "service_price": 100,
+      "service_duration": 60,
+      "staff_name": "Any Available Stylist",
+      "booking_date": "2026-07-28",
+      "start_time": "14:30",
+      "end_time": "15:30",
+      "status": "pending",
+      "notes": "",
+      "created_at": "2026-07-28T09:33:56.136Z",
+      "updated_at": "2026-07-28T09:33:56.136Z"
+    },
+    {
+      "id": "bk-1785230771740",
+      "customer_id": "user-c1",
+      "customer_name": "Sophia Williams",
+      "customer_phone": "+1 (555) 234-5678",
+      "customer_email": "sophia.w@example.com",
+      "service_id": "srv-1785187893763",
+      "service_name": "New Service ",
+      "service_price": 100,
+      "service_duration": 60,
+      "staff_name": "Any Available Stylist",
+      "booking_date": "2026-07-28",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "status": "pending",
+      "notes": "",
+      "created_at": "2026-07-28T09:26:11.740Z",
+      "updated_at": "2026-07-28T09:26:11.740Z"
+    },
+    {
+      "id": "bk-1785230609246",
+      "customer_id": "user-c1",
+      "customer_name": "Sophia Williams",
+      "customer_phone": "+1 (555) 234-5678",
+      "customer_email": "sophia.w@example.com",
+      "service_id": "srv-3",
+      "service_name": "24K Gold Glow Facial",
+      "service_price": 1500,
+      "service_duration": 75,
+      "staff_name": "Any Available Stylist",
+      "booking_date": "2026-07-28",
+      "start_time": "11:00",
+      "end_time": "12:15",
+      "status": "pending",
+      "notes": "",
+      "created_at": "2026-07-28T09:23:29.246Z",
+      "updated_at": "2026-07-28T09:23:29.246Z"
+    },
+    {
       "id": "bk-1785173440400",
       "customer_id": "user-c1",
       "customer_name": "Ananya Roy",
@@ -423,6 +480,27 @@
     }
   ],
   "emailLogs": [
+    {
+      "id": "email-1785231236136",
+      "to": "sophia.w@example.com",
+      "subject": "Booking Request Received - Monikaz Parlour (#bk-1785231236136)",
+      "body": "Hello Sophia Williams,\n\nYour appointment for \"New Service \" on 2026-07-28 at 14:30 with Any Available Stylist has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!",
+      "sent_at": "2026-07-28T09:33:56.136Z"
+    },
+    {
+      "id": "email-1785230771740",
+      "to": "sophia.w@example.com",
+      "subject": "Booking Request Received - Monikaz Parlour (#bk-1785230771740)",
+      "body": "Hello Sophia Williams,\n\nYour appointment for \"New Service \" on 2026-07-28 at 15:00 with Any Available Stylist has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!",
+      "sent_at": "2026-07-28T09:26:11.740Z"
+    },
+    {
+      "id": "email-1785230609246",
+      "to": "sophia.w@example.com",
+      "subject": "Booking Request Received - Monikaz Parlour (#bk-1785230609246)",
+      "body": "Hello Sophia Williams,\n\nYour appointment for \"24K Gold Glow Facial\" on 2026-07-28 at 11:00 with Any Available Stylist has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!",
+      "sent_at": "2026-07-28T09:23:29.246Z"
+    },
     {
       "id": "email-1785175299960",
       "to": "isabella.vance@example.com",

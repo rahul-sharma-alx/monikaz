@@ -31,6 +31,7 @@ create table if not exists public.services (
   category text not null,
   image_url text,
   is_active boolean default true,
+  discount_percent int default 0,
   created_at timestamptz default now()
 );
 
@@ -45,6 +46,7 @@ create table if not exists public.staff (
   role text,
   email text,
   phone text,
+  permissions text[],
   rating numeric(3,2) default 5.0,
   reviews_count int default 0,
   created_at timestamptz default now()

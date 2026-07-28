@@ -7,7 +7,64 @@ import { Service, Staff, Booking, Review, Profile, Shop, Address, SocialMedia, P
 const PORT = 3000;
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+
+// ── Security Headers ──
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'");
+  next();
+});
+
+// ── Simple In-Memory Rate Limiter ──
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(limit = 100, windowMs = 60000) {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now > bucket.resetAt) {
+      rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (bucket.count >= limit) {
+      return res.status(429).json({ error: 'Too many requests. Please slow down.' });
+    }
+    bucket.count++;
+    next();
+  };
+}
+
+app.use(rateLimit(200, 60000));
+app.use('/api/', rateLimit(60, 60000));
+
+// ── Input Sanitization ──
+function sanitize(val: unknown): any {
+  if (typeof val === 'string') {
+    // ponytail: strip HTML tags to prevent stored XSS
+    return val.replace(/<[^>]*>/g, '').trim();
+  }
+  return val;
+}
+function sanitizeBody(body: Record<string, unknown>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(body)) {
+    out[k] = Array.isArray(v) ? v.map(sanitize) : sanitize(v);
+  }
+  return out;
+}
+
+// ── Environment Validation ──
+if (!process.env.VITE_SUPABASE_URL && !process.env.SUPABASE_URL) {
+  console.warn('⚠ Supabase not configured. The app will fall back to the local Express API.');
+}
+if (process.env.VERCEL) {
+  console.log('Running on Vercel — SSE and file-persistence are disabled.');
+}
 
 // In-Memory & File Store Persistence
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -138,7 +195,8 @@ app.get('/api/services', (req, res) => {
 });
 
 app.post('/api/services', (req, res) => {
-  const { name, description, price, duration_minutes, category, image_url, is_active, discount_percent } = req.body;
+  const body = sanitizeBody(req.body);
+  const { name, description, price, duration_minutes, category, image_url, is_active, discount_percent } = body;
   const newService: Service = {
     id: `srv-${Date.now()}`,
     name: name || '',
@@ -209,10 +267,15 @@ app.get('/api/staff', (req, res) => {
 });
 
 app.post('/api/staff', (req, res) => {
+  const body = sanitizeBody(req.body);
   const newStaff: Staff = {
     id: `stf-${Date.now()}`,
-    ...req.body,
-    is_active: req.body.is_active ?? true,
+    full_name: body.full_name || '',
+    bio: body.bio || '',
+    specialties: body.specialties || [],
+    photo_url: body.photo_url || '',
+    ...body,
+    is_active: body.is_active ?? true,
     rating: 5.0,
     reviews_count: 0,
     created_at: new Date().toISOString()
@@ -279,6 +342,7 @@ function isTimeOverlap(start1: string, end1: string, start2: string, end2: strin
 app.post('/api/bookings', async (req, res) => {
   const unlock = await acquireBookingLock();
   try {
+    const body = sanitizeBody(req.body);
     const {
       customer_id,
       customer_name,
@@ -294,7 +358,7 @@ app.post('/api/bookings', async (req, res) => {
       start_time,
       end_time,
       notes
-    } = req.body;
+    } = body;
 
     if (!service_id || !booking_date || !start_time || !end_time) {
       unlock();

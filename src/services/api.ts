@@ -1,5 +1,5 @@
 import { Service, Staff, Booking, Review, Profile, BookingStatus, Shop, Address, SocialMedia, PriceHistory } from '../types';
-import { getSupabaseClient, getCurrentUser } from '../lib/supabase';
+import { getSupabaseClient } from '../lib/supabase';
 
 // ponytail: in-memory cache with 3s TTL — no stale-while-revalidate library needed
 const cache = new Map<string, { data: any; staleAt: number }>();
@@ -57,7 +57,7 @@ export const api = {
     invalidateCache('services');
     const payload = { id: `srv-${Date.now()}`, ...serviceData };
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('services').insert([payload]).select().single();
       if (!error && data) return data as Service;
     }
@@ -70,21 +70,20 @@ export const api = {
   async updateService(id: string, serviceData: Partial<Service>): Promise<Service> {
     invalidateCache('services');
     const supabase = getSupabaseClient();
-    const user = getCurrentUser();
-    if (supabase && user) {
+    if (supabase) {
       const { data, error } = await supabase.from('services').update(serviceData).eq('id', id).select().single();
       if (!error && data) return data as Service;
     }
     return fetchApi<Service>(`/api/services/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ ...serviceData, updated_by: user?.id }),
+      body: JSON.stringify({ ...serviceData, updated_by: 'admin' }),
     });
   },
 
   async deleteService(id: string): Promise<void> {
     invalidateCache('services');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       await supabase.from('services').delete().eq('id', id);
       return;
     }
@@ -111,7 +110,7 @@ export const api = {
   async createStaff(staffData: Partial<Staff>): Promise<Staff> {
     invalidateCache('staff');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('staff').insert([staffData]).select().single();
       if (!error && data) return data as Staff;
     }
@@ -124,7 +123,7 @@ export const api = {
   async updateStaff(id: string, staffData: Partial<Staff>): Promise<Staff> {
     invalidateCache('staff');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('staff').update(staffData).eq('id', id).select().single();
       if (!error && data) return data as Staff;
     }
@@ -143,9 +142,7 @@ export const api = {
       const isCustomer = !currentUser || currentUser.role === 'customer';
       const effectiveParams: Record<string, string> = { ...(params as Record<string, string>) };
       if (isCustomer && currentUser?.id) effectiveParams.customer_id = currentUser.id;
-      if (supabase && !isCustomer) {
-        // ponytail: admin reads from Express only (see bypassSupabase comment)
-      } else {
+      if (supabase) {
         const queryStr = new URLSearchParams(effectiveParams).toString();
         fetchApi<Booking[]>(`/api/bookings${queryStr ? `?${queryStr}` : ''}`).then(d => setCache(cacheKey, d)).catch(() => {});
       }
@@ -155,7 +152,7 @@ export const api = {
     const isCustomer = !currentUser || currentUser.role === 'customer';
     const effectiveParams: Record<string, string> = { ...(params as Record<string, string>) };
     if (isCustomer && currentUser?.id) effectiveParams.customer_id = currentUser.id;
-    if (supabase && isCustomer) {
+    if (supabase) {
       let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
       if (effectiveParams.customer_id) query = query.eq('customer_id', effectiveParams.customer_id);
       if (effectiveParams.staff_id) query = query.eq('staff_id', effectiveParams.staff_id);
@@ -174,7 +171,7 @@ export const api = {
   async createBooking(bookingData: Partial<Booking>): Promise<Booking> {
     invalidateCache('bookings');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('bookings').insert([bookingData]).select().single();
       if (!error && data) return data as Booking;
     }
@@ -187,7 +184,7 @@ export const api = {
   async updateBookingStatus(id: string, status: BookingStatus): Promise<Booking> {
     invalidateCache('bookings');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase
         .from('bookings')
         .update({ status, updated_at: new Date().toISOString() })
@@ -207,7 +204,8 @@ export const api = {
     const cacheKey = `reviews-${currentUser?.id || 'anon'}`;
     const cached = getCached<Review[]>(cacheKey);
     if (cached) {
-      fetchApi<Review[]>(`/api/reviews${currentUser && currentUser.role === 'customer' ? `?customer_id=${currentUser.id}` : ''}`)
+      const params = currentUser && currentUser.role === 'customer' ? `?customer_id=${currentUser.id}` : '';
+      fetchApi<Review[]>(`/api/reviews${params}`)
         .then(d => setCache(cacheKey, d)).catch(() => {});
       return cached;
     }
@@ -229,7 +227,7 @@ export const api = {
   async createReview(reviewData: Partial<Review>): Promise<Review> {
     invalidateCache('reviews');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('reviews').insert([reviewData]).select().single();
       if (!error && data) return data as Review;
     }
@@ -242,7 +240,7 @@ export const api = {
   async respondToReview(id: string, response: string): Promise<Review> {
     invalidateCache('reviews');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('reviews').update({ admin_response: response }).eq('id', id).select().single();
       if (!error && data) return data as Review;
     }
@@ -332,7 +330,7 @@ export const api = {
   async updateShop(data: { name?: string; logo_url?: string }): Promise<Shop> {
     invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data: d, error } = await supabase.from('shops').update(data).eq('id', 'shop-1').select().single();
       if (!error && d) return d as Shop;
     }
@@ -342,7 +340,7 @@ export const api = {
   async addAddress(address: string): Promise<Address> {
     invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('addresses').insert([{ id: `addr-${Date.now()}`, shop_id: 'shop-1', address }]).select().single();
       if (!error && data) return data as Address;
     }
@@ -352,7 +350,7 @@ export const api = {
   async deleteAddress(id: string): Promise<void> {
     invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       await supabase.from('addresses').delete().eq('id', id);
       return;
     }
@@ -362,7 +360,7 @@ export const api = {
   async addSocialMedia(media_name: string, link: string): Promise<SocialMedia> {
     invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       const { data, error } = await supabase.from('social_media').insert([{ id: `sm-${Date.now()}`, shop_id: 'shop-1', media_name, link }]).select().single();
       if (!error && data) return data as SocialMedia;
     }
@@ -372,7 +370,7 @@ export const api = {
   async deleteSocialMedia(id: string): Promise<void> {
     invalidateCache('shop');
     const supabase = getSupabaseClient();
-    if (supabase && getCurrentUser()) {
+    if (supabase) {
       await supabase.from('social_media').delete().eq('id', id);
       return;
     }

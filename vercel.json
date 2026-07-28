@@ -4,6 +4,7 @@
   "installCommand": "npm ci",
   "framework": null,
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

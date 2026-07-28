@@ -84,18 +84,27 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
     const startMins = timeToMins(timeSlot);
     const endMins = startMins + selectedService.duration_minutes;
 
-    return existingBookings.some(b => {
-      if (b.status === 'cancelled' || b.status === 'no_show') return false;
-      if (b.booking_date !== selectedDate) return false;
+    const activeStaff = staffList.filter(s => s.is_active);
+    const bookingsOnDate = existingBookings.filter(b =>
+      b.booking_date === selectedDate && b.status !== 'cancelled' && b.status !== 'no_show'
+    );
 
-      // If specific staff selected, check staff schedule; else check general capacity
-      if (selectedStaff && b.staff_id !== selectedStaff.id) return false;
+    if (selectedStaff) {
+      // Specific staff: check if that staff is booked
+      return bookingsOnDate.some(b =>
+        b.staff_id === selectedStaff.id &&
+        Math.max(startMins, timeToMins(b.start_time)) < Math.min(endMins, timeToMins(b.end_time))
+      );
+    }
 
-      const bStart = timeToMins(b.start_time);
-      const bEnd = timeToMins(b.end_time);
-
-      return Math.max(startMins, bStart) < Math.min(endMins, bEnd);
-    });
+    // "Any Available": block only if ALL staff are booked at this time
+    if (activeStaff.length === 0) return false;
+    return activeStaff.every(staff =>
+      bookingsOnDate.some(b =>
+        b.staff_id === staff.id &&
+        Math.max(startMins, timeToMins(b.start_time)) < Math.min(endMins, timeToMins(b.end_time))
+      )
+    );
   };
 
   const handleNextStep = () => {
@@ -152,11 +161,11 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E3D8CE] shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-2xl w-full border border-[#E3D8CE] shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[85vh] animate-in fade-in zoom-in duration-200">
         
         {/* Modal Header */}
-        <div className="bg-[#2C221E] text-white p-6 relative flex items-center justify-between">
+        <div className="bg-[#2C221E] text-white p-4 sm:p-6 relative flex items-center justify-between flex-shrink-0">
           <div>
             <span className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold">
               Book Your Appointment
@@ -175,26 +184,26 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
         </div>
 
         {/* Step Indicator Bar */}
-        <div className="bg-[#FAF6F3] border-b border-[#E8DFD8] px-6 py-3 flex items-center justify-between text-xs font-semibold text-[#8A7568]">
-          <span className={step >= 1 ? 'text-[#2C221E] font-bold' : ''}>1. Service & Staff</span>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
-          <span className={step >= 2 ? 'text-[#2C221E] font-bold' : ''}>2. Date & Time</span>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
-          <span className={step >= 3 ? 'text-[#2C221E] font-bold' : ''}>3. Details</span>
-          <ChevronRight className="w-4 h-4 text-stone-400" />
-          <span className={step >= 4 ? 'text-[#2C221E] font-bold' : ''}>4. Confirm</span>
+        <div className="bg-[#FAF6F3] border-b border-[#E8DFD8] px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between text-xs font-semibold text-[#8A7568] flex-shrink-0">
+          <span className={step >= 1 ? 'text-[#2C221E] font-bold' : ''}>1</span>
+          <ChevronRight className="w-3 h-3 text-stone-400" />
+          <span className={step >= 2 ? 'text-[#2C221E] font-bold' : ''}>2</span>
+          <ChevronRight className="w-3 h-3 text-stone-400" />
+          <span className={step >= 3 ? 'text-[#2C221E] font-bold' : ''}>3</span>
+          <ChevronRight className="w-3 h-3 text-stone-400" />
+          <span className={step >= 4 ? 'text-[#2C221E] font-bold' : ''}>4</span>
         </div>
 
         {/* Error Alert Banner */}
         {errorMsg && (
-          <div className="mx-6 mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2">
+          <div className="mx-4 sm:mx-6 mt-3 p-2.5 sm:p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 flex-shrink-0">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {/* Modal Content Steps */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
           
           {/* STEP 1: SERVICE & STAFF SELECTION */}
           {step === 1 && (
@@ -203,7 +212,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#2C221E] mb-2">
                   Select Beauty Service *
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-1">
                   {services.filter(s => s.is_active).map((service) => (
                     <div
                       key={service.id}
@@ -311,7 +320,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
                   Available Time Slots ({selectedService?.duration_minutes} min service) *
                 </label>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto p-1">
                   {TIME_SLOTS.map((slot) => {
                     const booked = isSlotBooked(slot);
                     return (
@@ -521,7 +530,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
         </div>
 
         {/* Modal Footer Controls */}
-        <div className="p-6 bg-[#FAF6F3] border-t border-[#E8DFD8] flex items-center justify-between">
+        <div className="p-4 sm:p-6 bg-[#FAF6F3] border-t border-[#E8DFD8] flex items-center justify-between flex-shrink-0">
           {step > 1 ? (
             <button
               onClick={() => setStep(prev => prev - 1)}
