@@ -172,8 +172,10 @@ export const api = {
     invalidateCache('bookings');
     const supabase = getSupabaseClient();
     if (supabase) {
-      const { data, error } = await supabase.from('bookings').insert([bookingData]).select().single();
-      if (!error && data) return data as Booking;
+      try {
+        const { data, error } = await supabase.from('bookings').insert([bookingData]).select().single();
+        if (!error && data) return data as Booking;
+      } catch {}
     }
     return fetchApi<Booking>('/api/bookings', {
       method: 'POST',

@@ -76,8 +76,17 @@ export default function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState<boolean>(false);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
-  // QR booking flow
-  const [pendingBookingAfterAuth, setPendingBookingAfterAuth] = useState(false);
+  // Pending booking intent: saved when user triggers booking without auth
+  const [pendingBookingIntent, setPendingBookingIntent] = useState<{
+    service: Service | null;
+    staff: Staff | null;
+  } | null>(() => {
+    const saved = localStorage.getItem('monikaz_pending_booking');
+    if (saved) {
+      try { return JSON.parse(saved); } catch { return null; }
+    }
+    return null;
+  });
 
   // Realtime & Notifications
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -132,12 +141,9 @@ export default function App() {
   useEffect(() => {
     if (window.location.search.includes('book=true')) {
       if (currentUser) {
-        setPendingBookingAfterAuth(false);
-        setPreselectedService(null);
-        setPreselectedStaff(null);
         setIsBookingModalOpen(true);
       } else {
-        setPendingBookingAfterAuth(true);
+        setPendingBookingIntent({ service: null, staff: null });
         setIsAuthModalOpen(true);
       }
     }
@@ -202,6 +208,14 @@ export default function App() {
       setCurrentUser(p); setCurrentRole('customer');
       localStorage.setItem('monikaz_user', JSON.stringify(p));
       clearAuthHash();
+      const saved = localStorage.getItem('monikaz_pending_booking');
+      if (saved) {
+        try {
+          const intent = JSON.parse(saved);
+          localStorage.removeItem('monikaz_pending_booking');
+          if (intent) { setPreselectedService(intent.service); setPreselectedStaff(intent.staff); setIsBookingModalOpen(true); }
+        } catch {}
+      }
       return;
     }
 
@@ -226,6 +240,14 @@ export default function App() {
           if (insertErr) console.warn('Could not save profile to Supabase (profiles table missing?):', insertErr.message);
           setCurrentUser(newProfile as Profile); setCurrentRole('customer');
           localStorage.setItem('monikaz_user', JSON.stringify(newProfile));
+        }
+        const saved = localStorage.getItem('monikaz_pending_booking');
+        if (saved) {
+          try {
+            const intent = JSON.parse(saved);
+            localStorage.removeItem('monikaz_pending_booking');
+            if (intent) { setPreselectedService(intent.service); setPreselectedStaff(intent.staff); setIsBookingModalOpen(true); }
+          } catch {}
         }
       }
     });
@@ -260,16 +282,31 @@ export default function App() {
   };
 
   // Actions
-  const handleOpenBookingForService = (service: Service) => {
+  const openBookingWithAuthGuard = (service: Service | null, staff: Staff | null) => {
+    if (!currentUser) {
+      const intent = { service, staff };
+      setPendingBookingIntent(intent);
+      localStorage.setItem('monikaz_pending_booking', JSON.stringify(intent));
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setPendingBookingIntent(null);
+    localStorage.removeItem('monikaz_pending_booking');
     setPreselectedService(service);
-    setPreselectedStaff(null);
+    setPreselectedStaff(staff);
     setIsBookingModalOpen(true);
   };
 
+  const handleOpenBookingForService = (service: Service) => {
+    openBookingWithAuthGuard(service, null);
+  };
+
   const handleOpenBookingWithStaff = (staff: Staff) => {
-    setPreselectedStaff(staff);
-    setPreselectedService(services.length > 0 ? services[0] : null);
-    setIsBookingModalOpen(true);
+    openBookingWithAuthGuard(services.length > 0 ? services[0] : null, staff);
+  };
+
+  const handleOpenDefaultBooking = () => {
+    openBookingWithAuthGuard(services.length > 0 ? services[0] : null, null);
   };
 
   const handleBookingSubmitted = async (bookingData: Partial<Booking>) => {
@@ -401,10 +438,12 @@ export default function App() {
     localStorage.setItem('monikaz_user', JSON.stringify(profile));
     setIsAuthModalOpen(false);
     setRequiredRoleForAdmin(false);
-    if (pendingBookingAfterAuth) {
-      setPendingBookingAfterAuth(false);
-      setPreselectedService(null);
-      setPreselectedStaff(null);
+    const intent = pendingBookingIntent;
+    if (intent) {
+      setPendingBookingIntent(null);
+      localStorage.removeItem('monikaz_pending_booking');
+      setPreselectedService(intent.service);
+      setPreselectedStaff(intent.staff);
       setIsBookingModalOpen(true);
     }
   };
@@ -466,11 +505,7 @@ export default function App() {
           onRoleChange={handleRoleChange}
           activeTab={activeTab}
           setActiveTab={handleTabChange}
-          onOpenBooking={() => {
-            setPreselectedService(services.length > 0 ? services[0] : null);
-            setPreselectedStaff(null);
-            setIsBookingModalOpen(true);
-          }}
+          onOpenBooking={handleOpenDefaultBooking}
           unreadCount={unreadNotifCount}
           onOpenNotifications={() => handleSetActiveTab('bookings')}
           isConnected={isConnected}
@@ -503,11 +538,7 @@ export default function App() {
           ) : activeTab === 'services' && (
             <motion.div key="services" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
               <Hero
-                onOpenBooking={() => {
-                  setPreselectedService(services.length > 0 ? services[0] : null);
-                  setPreselectedStaff(null);
-                  setIsBookingModalOpen(true);
-                }}
+                onOpenBooking={handleOpenDefaultBooking}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 onSelectCategory={setSelectedCategory}
@@ -515,11 +546,7 @@ export default function App() {
 
               {/* Pinned Scroll Storytelling Experience */}
               <PinnedJourney
-                onOpenBooking={() => {
-                  setPreselectedService(services.length > 0 ? services[0] : null);
-                  setPreselectedStaff(null);
-                  setIsBookingModalOpen(true);
-                }}
+                onOpenBooking={handleOpenDefaultBooking}
               />
 
               <ServiceCatalog
@@ -541,11 +568,7 @@ export default function App() {
                       <p className="text-xs text-[#8A7568] mt-1">We're open 7 days a week. Book your slot at a time that suits you.</p>
                     </div>
                     <button
-                      onClick={() => {
-                        setPreselectedService(services.length > 0 ? services[0] : null);
-                        setPreselectedStaff(null);
-                        setIsBookingModalOpen(true);
-                      }}
+                      onClick={handleOpenDefaultBooking}
                       className="bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-colors cursor-pointer flex items-center gap-2 self-start min-h-[44px]"
                     >
                       <Sparkles className="w-4 h-4 text-[#D4AF37]" />
@@ -565,11 +588,7 @@ export default function App() {
                             return (
                               <button
                                 key={label}
-                                onClick={() => {
-                                  setPreselectedService(services.length > 0 ? services[0] : null);
-                                  setPreselectedStaff(null);
-                                  setIsBookingModalOpen(true);
-                                }}
+                                onClick={handleOpenDefaultBooking}
                                 className="px-2.5 py-1.5 rounded-lg bg-white border border-[#E3D8CE] text-[11px] font-medium text-[#68584E] hover:bg-[#2C221E] hover:text-white transition-colors cursor-pointer"
                               >
                                 {label}
