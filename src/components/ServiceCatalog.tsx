@@ -146,6 +146,40 @@ export const ServiceCatalog: React.FC<ServiceCatalogProps> = ({
         </div>
       </div>
 
+      {/* Special Offers — discounted services showcase */}
+      {(() => {
+        const deals = services.filter(s => s.discount_percent && s.discount_percent > 0 && s.is_active);
+        if (deals.length === 0) return null;
+        return (
+          <div className="mb-8 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-3xl border border-emerald-200 p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg">🔥</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">Special Offers</span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              {deals.map(d => (
+                <div
+                  key={d.id}
+                  onClick={() => onBookService(d)}
+                  className="flex-shrink-0 w-56 bg-white rounded-2xl border border-emerald-100 p-3 flex items-start gap-3 cursor-pointer hover:shadow-md transition-shadow"
+                >
+                  <img src={d.image_url} alt={d.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#2C221E] truncate">{d.name}</p>
+                    <p className="text-emerald-600 font-bold text-sm mt-0.5">
+                      ₹{Math.round(d.price * (1 - (d.discount_percent || 0) / 100))}
+                    </p>
+                    <span className="inline-block mt-1 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {d.discount_percent}% OFF
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Category Pills - Scrollable on Mobile with Touch Target Height */}
       <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         {CATEGORIES.map((cat) => (

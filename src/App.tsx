@@ -505,6 +505,58 @@ export default function App() {
                 setSearchQuery={setSearchQuery}
               />
 
+              {/* Salon Hours & Available Times */}
+              <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+                <div className="bg-white rounded-3xl border border-[#E3D8CE] p-5 sm:p-7 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                      <span className="text-xs uppercase tracking-widest text-[#A87B51] font-bold">Schedule</span>
+                      <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#2C221E] mt-1">Available Times</h2>
+                      <p className="text-xs text-[#8A7568] mt-1">We're open 7 days a week. Book your slot at a time that suits you.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setPreselectedService(services.length > 0 ? services[0] : null);
+                        setPreselectedStaff(null);
+                        setIsBookingModalOpen(true);
+                      }}
+                      className="bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-colors cursor-pointer flex items-center gap-2 self-start min-h-[44px]"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                      <span>Book Now</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {['Mon–Fri', 'Saturday', 'Sunday'].map(day => (
+                      <div key={day} className="bg-[#FAF6F3] rounded-2xl p-4 border border-[#E3D8CE]">
+                        <p className="text-sm font-bold text-[#2C221E]">{day}</p>
+                        <p className="text-xs text-[#A87B51] font-semibold mt-1">10:00 AM – 6:00 PM</p>
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {Array.from({ length: 16 }, (_, i) => {
+                            const h = Math.floor(i * 0.5 + 10);
+                            const m = i % 2 === 0 ? '00' : '30';
+                            const label = `${h.toString().padStart(2, '0')}:${m}`;
+                            return (
+                              <button
+                                key={label}
+                                onClick={() => {
+                                  setPreselectedService(services.length > 0 ? services[0] : null);
+                                  setPreselectedStaff(null);
+                                  setIsBookingModalOpen(true);
+                                }}
+                                className="px-2.5 py-1.5 rounded-lg bg-white border border-[#E3D8CE] text-[11px] font-medium text-[#68584E] hover:bg-[#2C221E] hover:text-white transition-colors cursor-pointer"
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
               {/* Interactive Transformation Reveal Slider */}
               <TransformationReveal />
             </>

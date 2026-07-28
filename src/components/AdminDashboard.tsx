@@ -1754,9 +1754,28 @@ function QrGenerator() {
           />
         </div>
 
-        <div className="flex justify-center bg-white p-6 rounded-2xl border border-[#E3D8CE]">
+        <div className="flex justify-center bg-white p-6 rounded-2xl border border-[#E3D8CE] relative">
           <img src={qrSrc} alt="QR Code for booking" className="w-64 h-64" />
         </div>
+
+        <button
+          onClick={async () => {
+            const resp = await fetch(qrSrc);
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'monikaz-parlour-qr.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+          className="w-full bg-[#2C221E] hover:bg-[#4A3933] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-colors cursor-pointer flex items-center justify-center gap-2 min-h-[44px]"
+        >
+          <span>⬇</span>
+          <span>Download QR Code</span>
+        </button>
 
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-800">
           <p className="font-bold mb-1">How it works:</p>
