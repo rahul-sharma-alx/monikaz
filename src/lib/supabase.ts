@@ -83,6 +83,31 @@ export function getCurrentUser(): User | null {
   return cachedUser;
 }
 
+export function tryRecoverSessionFromHash(): {
+  id: string; email: string; full_name: string; avatar_url: string;
+} | null {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token=')) return null;
+  try {
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return {
+      id: payload.sub,
+      email: payload.email || '',
+      full_name: payload.user_metadata?.full_name || payload.email?.split('@')[0] || 'User',
+      avatar_url: payload.user_metadata?.avatar_url || payload.user_metadata?.picture || '',
+    };
+  } catch { return null; }
+}
+
+export function clearAuthHash() {
+  if (window.location.hash.includes('access_token=')) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
 export async function signUpWithEmail(email: string, password: string, fullName: string) {
   const supabase = getSupabaseClient();
   if (!supabase) throw new Error('Supabase not configured');

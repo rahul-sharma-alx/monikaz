@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserRole, Service, Staff, Booking, Review, Notification, BookingStatus, SupabaseConfig, Profile, Shop, Address, SocialMedia } from './types';
 import { api } from './services/api';
-import { getSupabaseCredentials, saveSupabaseCredentials, setupAuthListener, onAuthChange, getSupabaseClient, signOut } from './lib/supabase';
+import { getSupabaseCredentials, saveSupabaseCredentials, setupAuthListener, onAuthChange, getSupabaseClient, signOut, tryRecoverSessionFromHash, clearAuthHash } from './lib/supabase';
 import { Phone, MapPin, MessageCircle, Sparkles, Scissors } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -190,6 +190,21 @@ export default function App() {
 
   // Supabase auth state listener (Google OAuth)
   useEffect(() => {
+    // Direct URL hash recovery — handles OAuth redirect even if Supabase SDK's
+    // _initialize() misses or delays processing the hash (common on slow/Vercel).
+    const hashSession = tryRecoverSessionFromHash();
+    if (hashSession) {
+      const p: Profile = {
+        id: hashSession.id, full_name: hashSession.full_name,
+        phone: '', email: hashSession.email, role: 'customer',
+        avatar_url: hashSession.avatar_url, created_at: new Date().toISOString(),
+      };
+      setCurrentUser(p); setCurrentRole('customer');
+      localStorage.setItem('monikaz_user', JSON.stringify(p));
+      clearAuthHash();
+      return;
+    }
+
     setupAuthListener();
     const unsub = onAuthChange(async (user) => {
       if (user) {
@@ -207,11 +222,10 @@ export default function App() {
             phone: '', email: user.email || '', role: 'customer' as UserRole,
             avatar_url,
           };
-          const { error } = await supabase.from('profiles').insert([{ ...newProfile, created_at: new Date().toISOString() }]);
-          if (!error) {
-            setCurrentUser(newProfile as Profile); setCurrentRole('customer');
-            localStorage.setItem('monikaz_user', JSON.stringify(newProfile));
-          }
+          const { error: insertErr } = await supabase.from('profiles').insert([{ ...newProfile, created_at: new Date().toISOString() }]);
+          if (insertErr) console.warn('Could not save profile to Supabase (profiles table missing?):', insertErr.message);
+          setCurrentUser(newProfile as Profile); setCurrentRole('customer');
+          localStorage.setItem('monikaz_user', JSON.stringify(newProfile));
         }
       }
     });
