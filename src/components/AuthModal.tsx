@@ -96,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleDemoAdminLogin = () => {
     onLogin({
       id: 'user-a1',
-      full_name: 'Monika Sharma (Owner & Admin)',
+      full_name: 'Madhushree (Owner & Admin)',
       phone: '+91 98765 00000',
       email: 'monika@monikazparlour.com',
       role: 'admin',
@@ -104,7 +104,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
       created_at: new Date().toISOString(),
     });
-    setMessage({ type: 'success', text: 'Logged in as Monika Sharma (Owner / Full Admin)' });
+    setMessage({ type: 'success', text: 'Logged in as Madhushree (Owner / Full Admin)' });
     setTimeout(onClose, 600);
   };
 
@@ -172,7 +172,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#E5C380] text-[10px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3 h-3" /> Monikaz Beauty Pass
+            <Sparkles className="w-3 h-3" /> Monikazz Beauty Pass
           </div>
 
           <h3 className="font-serif text-2xl font-bold">
@@ -181,7 +181,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             ) : currentUser ? (
               <span>Your Account Profile</span>
             ) : mode === 'login' ? (
-              <span>Welcome Back to Monikaz</span>
+              <span>Welcome Back to Monikazz</span>
             ) : mode === 'signup' ? (
               <span>Create Parlour Account</span>
             ) : (
@@ -464,7 +464,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <option value="customer">Customer — Priya Sharma</option>
                   <option value="staff">Staff — Neha Kapoor</option>
                   <option value="manager">Manager — Aisha Patel</option>
-                  <option value="admin">Owner/Admin — Monika Sharma</option>
+                  <option value="admin">Owner/Admin — Madhushree</option>
                 </select>
                 <button
                   type="button"

@@ -719,21 +719,21 @@ export default function App() {
           {activeTab === 'about' && (
             <motion.div key="about" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
             <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-              <h2 className="font-serif text-3xl font-bold text-[#2C221E]">About Monikaz Parlour</h2>
+              <h2 className="font-serif text-3xl font-bold text-[#2C221E]">About Monikazz Salon & Academy</h2>
 
               <div className="bg-white rounded-3xl p-6 border border-[#E3D8CE] shadow-sm space-y-5">
                 <div className="flex flex-col sm:flex-row items-start gap-6">
                   <div className="w-full sm:w-48 h-48 rounded-2xl overflow-hidden shrink-0 bg-[#FAF6F3] border border-[#E3D8CE]">
                     <img
                       src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=400"
-                      alt="Monikaz Parlour"
+                      alt="Monikazz Salon & Academy"
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="space-y-3">
                     <h3 className="font-serif text-xl font-bold text-[#2C221E]">Our Story</h3>
                     <p className="text-sm text-[#68584E] leading-relaxed">
-                      Monikaz Parlour is a premium beauty and wellness destination located in the heart of Bandra, Mumbai. 
+                      Monikazz Salon & Academy is a premium beauty and wellness destination located in the heart of Bandra, Mumbai. 
                       We specialize in hair styling, skincare, bridal makeup, nail art, and body spa treatments — 
                       offering a complete self-care experience under one roof.
                     </p>

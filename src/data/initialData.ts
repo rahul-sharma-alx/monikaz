@@ -32,7 +32,7 @@ export const INITIAL_PROFILES: Profile[] = [
   },
   {
     id: 'user-a1',
-    full_name: 'Monika Sharma (Owner & Admin)',
+    full_name: 'Madhushree (Owner & Admin)',
     phone: '+91 98765 00000',
     email: 'monika@monikazparlour.com',
     role: 'admin',
@@ -125,7 +125,7 @@ export const INITIAL_SERVICES: Service[] = [
 export const INITIAL_STAFF: Staff[] = [
   {
     id: 'stf-1',
-    full_name: 'Monika Sharma',
+    full_name: 'Madhushree',
     bio: 'Founder & Senior Hair Stylist with 14+ years experience. Expert in Balayage, Keratin treatments and bridal hairstyles.',
     specialties: ['Balayage & Hair Colour', 'Keratin Treatment', 'Bridal Hair'],
     photo_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400',
@@ -233,7 +233,7 @@ export const INITIAL_BOOKINGS: Booking[] = [
     service_price: 1800,
     service_duration: 90,
     staff_id: 'stf-1',
-    staff_name: 'Monika Sharma',
+    staff_name: 'Madhushree',
     booking_date: getTodayString(1),
     start_time: '14:00',
     end_time: '15:30',
@@ -307,7 +307,7 @@ export const INITIAL_REVIEWS: Review[] = [
     service_id: 'srv-1',
     service_name: 'Keratin & Gloss Hair Treatment',
     staff_id: 'stf-1',
-    staff_name: 'Monika Sharma',
+    staff_name: 'Madhushree',
     rating: 5,
     comment: 'Monika transformed my dry frizzy hair into silky smooth! The salon is so clean and welcoming.',
     created_at: new Date(Date.now() - 86400000 * 5).toISOString()
@@ -421,7 +421,7 @@ alter publication supabase_realtime add table public.reviews;
 
 export const INITIAL_SHOP: Shop = {
   id: 'shop-1',
-  name: 'Monikaz Parlour',
+  name: 'Monikazz',
   logo_url: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200'
 };
 

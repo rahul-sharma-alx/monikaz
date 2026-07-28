@@ -178,7 +178,7 @@ if (!process.env.VERCEL) {
 
     sseClients.push(res);
 
-    res.write(`event: init\ndata: ${JSON.stringify({ message: 'Connected to Monikaz Parlour Realtime Stream' })}\n\n`);
+    res.write(`event: init\ndata: ${JSON.stringify({ message: 'Connected to Monikazz Salon & Academy Realtime Stream' })}\n\n`);
 
     req.on('close', () => {
       sseClients = sseClients.filter(client => client !== res);
@@ -191,7 +191,7 @@ if (!process.env.VERCEL) {
 // -------------------------------------------------------------
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Monikaz Parlour API', time: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'Monikazz Salon & Academy API', time: new Date().toISOString() });
 });
 
 // SERVICE ROUTES
@@ -415,8 +415,8 @@ app.post('/api/bookings', async (req, res) => {
     const emailLog = {
       id: `email-${Date.now()}`,
       to: newBooking.customer_email,
-      subject: `Booking Request Received - Monikaz Parlour (#${newBooking.id})`,
-      body: `Hello ${newBooking.customer_name},\n\nYour appointment for "${newBooking.service_name}" on ${newBooking.booking_date} at ${newBooking.start_time} with ${newBooking.staff_name} has been received and is currently Pending confirmation.\n\nThank you for choosing Monikaz Parlour!`,
+      subject: `Booking Request Received - Monikazz Salon & Academy (#${newBooking.id})`,
+      body: `Hello ${newBooking.customer_name},\n\nYour appointment for "${newBooking.service_name}" on ${newBooking.booking_date} at ${newBooking.start_time} with ${newBooking.staff_name} has been received and is currently Pending confirmation.\n\nThank you for choosing Monikazz Salon & Academy!`,
       sent_at: new Date().toISOString()
     };
     store.emailLogs.unshift(emailLog);
@@ -458,8 +458,8 @@ app.patch('/api/bookings/:id/status', async (req, res) => {
     const emailLog = {
       id: `email-${Date.now()}`,
       to: updatedBk.customer_email,
-      subject: `Booking Status Update: ${status.toUpperCase()} - Monikaz Parlour`,
-      body: `Hello ${updatedBk.customer_name},\n\nYour appointment #${updatedBk.id} for "${updatedBk.service_name}" on ${updatedBk.booking_date} is now status: ${status}.\n\nSee you at Monikaz Parlour!`,
+      subject: `Booking Status Update: ${status.toUpperCase()} - Monikazz Salon & Academy`,
+      body: `Hello ${updatedBk.customer_name},\n\nYour appointment #${updatedBk.id} for "${updatedBk.service_name}" on ${updatedBk.booking_date} is now status: ${status}.\n\nSee you at Monikazz Salon & Academy!`,
       sent_at: new Date().toISOString()
     };
     store.emailLogs.unshift(emailLog);
@@ -629,7 +629,7 @@ async function setupStaticServing() {
 if (!process.env.VERCEL) {
   setupStaticServing().then(() => {
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`✨ Monikaz Parlour Full-Stack App running on http://0.0.0.0:${PORT}`);
+      console.log(`✨ Monikazz Salon & Academy Full-Stack App running on http://0.0.0.0:${PORT}`);
     });
   });
 } else {

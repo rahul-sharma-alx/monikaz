@@ -2,7 +2,7 @@
 -- SET role = 'admin'
 -- WHERE email = 'monikaz@gmail.com';
 
--- Monikaz Parlour — Supabase Migration
+-- Monikazz Salon & Academy — Supabase Migration
 -- Safe to re-run. Uses IF NOT EXISTS / ON CONFLICT DO NOTHING everywhere.
 -- Does NOT drop existing tables, so existing data is preserved.
 
@@ -263,7 +263,7 @@ insert into public.services (id, name, description, price, duration_minutes, cat
 on conflict (id) do nothing;
 
 insert into public.staff (id, full_name, bio, specialties, photo_url, is_active, role, email, phone, rating, reviews_count) values
-  ('stf-1', 'Monika Sharma', 'Founder & Senior Hair Stylist with 14+ years experience in Balayage, Keratin and bridal hairstyles.', array['Balayage & Hair Colour','Keratin Treatment','Bridal Hair'], 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', true, 'admin', 'monika@monikazparlour.com', '+91 98765 00000', 4.9, 48),
+  ('stf-1', 'Madhushree', 'Founder & Senior Hair Stylist with 14+ years experience in Balayage, Keratin and bridal hairstyles.', array['Balayage & Hair Colour','Keratin Treatment','Bridal Hair'], 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400', true, 'admin', 'monika@monikazparlour.com', '+91 98765 00000', 4.9, 48),
   ('stf-2', 'Aisha Patel', 'Senior Skin Specialist & Parlour Manager. Expert in Gold facials, anti-aging and sensitive skin care.', array['24K Gold Facial','Hydra Facial','Chemical Peel'], 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400', true, 'manager', 'aisha.p@monikazparlour.com', '+91 98765 11111', 4.95, 39),
   ('stf-3', 'Neha Kapoor', 'Master Nail Artist specialising in gel extensions, nail art, Russian manicure and hand spa.', array['Gel Manicure','Nail Art','Russian Manicure'], 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400', true, 'staff', 'neha.k@monikazparlour.com', '+91 98765 22222', 4.88, 27),
   ('stf-4', 'Ananya Verma', 'Celebrity Makeup Artist. Expert in HD airbrush, bridal makeup, natural glow and party looks.', array['Bridal Makeup','Airbrush Makeup','Evening Glam'], 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400', true, 'staff', 'ananya.v@monikazparlour.com', '+91 98765 33333', 5.0, 32),
@@ -271,7 +271,7 @@ insert into public.staff (id, full_name, bio, specialties, photo_url, is_active,
 on conflict (id) do nothing;
 
 insert into public.shops (id, name, logo_url) values
-  ('shop-1', 'Monikaz Parlour', 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200')
+  ('shop-1', 'Monikazz Salon & Academy', 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=200')
 on conflict (id) do nothing;
 
 insert into public.addresses (id, shop_id, address) values

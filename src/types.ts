@@ -1,5 +1,5 @@
 /**
- * Monikaz Parlour - Data Models & Types
+ * Monikazz Salon & Academy - Data Models & Types
  */
 
 export type UserRole = 'customer' | 'staff' | 'manager' | 'admin';

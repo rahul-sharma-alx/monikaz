@@ -29,7 +29,7 @@ export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia, on
             </div>
             <div>
               <span className="font-serif text-2xl font-bold tracking-tight text-white block leading-none">
-                {shop?.name || 'Monikaz Parlour'}
+                Monikazz <span className="font-normal italic">Salon & Academy</span>
               </span>
               <span className="text-[10px] tracking-widest uppercase text-[#A8988D] block mt-1">
                 Premium Beauty & Spa Salon
@@ -122,7 +122,7 @@ export const Footer: React.FC<FooterProps> = ({ shop, addresses, socialMedia, on
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 pt-6 border-t border-[#3D2F2A] text-center text-xs text-[#A8988D] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p>© {new Date().getFullYear()} Monikaz Parlour. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Monikazz Salon & Academy. All rights reserved.</p>
         <p className="flex items-center justify-center gap-1">
           <span>Made with love for your beauty</span>
           <Heart className="w-3.5 h-3.5 text-[#D4AF37] fill-current" />

@@ -52,7 +52,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
     if (isCutoffExceeded(booking.booking_date, booking.start_time)) {
       setActionMessage({
         type: 'error',
-        text: 'Cancellations within 3 hours of appointment time cannot be performed online. Please call Monikaz Parlour desk at +1 (555) 999-0000.'
+        text: 'Cancellations within 3 hours of appointment time cannot be performed online. Please call Monikazz Salon & Academy desk at +1 (555) 999-0000.'
       });
       return;
     }

@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Top Announcement Bar */}
       <div className="bg-[#2C221E] text-[#F3E8E1] px-4 py-1.5 text-xs text-center flex items-center justify-center gap-2 font-medium">
         <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] animate-pulse" />
-        <span>{bestOffer || 'Welcome to Monikaz Parlour — Special offer: 15% off on 24K Gold Facial! Book now!'}</span>
+        <span>{bestOffer || 'Welcome to Monikazz Salon & Academy — Special offer: 15% off on 24K Gold Facial! Book now!'}</span>
         <button
           onClick={onOpenBooking}
           className="underline text-[#E5C380] hover:text-white ml-2 transition-colors cursor-pointer"
@@ -67,10 +67,10 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
             <div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-[#2C221E] block leading-none">
-                {shop?.name || 'Monikaz'}{' '}
-                <span className="italic font-normal text-[#A87B51]">Parlour</span>
-              </span>
+<span className="font-serif text-2xl font-bold tracking-tight text-[#2C221E] block leading-none">
+  {shop?.name || 'Monikazz'}
+  <span className="hidden sm:inline italic font-normal text-[#A87B51]"> Salon & Academy</span>
+</span>
               <span className="text-[10px] tracking-widest uppercase text-[#8A7568] font-medium block mt-1">
                 Premium Beauty & Spa Salon
               </span>

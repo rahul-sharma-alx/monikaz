@@ -357,7 +357,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* Footer in expanded mode */}
           {!isSidebarCollapsed && (
             <div className="mt-8 pt-4 border-t border-[#4A3933] text-[11px] text-stone-400 space-y-1">
-              <p className="font-semibold text-stone-300">Monikaz Admin Portal</p>
+              <p className="font-semibold text-stone-300">Monikazz Admin Portal</p>
               <p className="text-[10px] text-emerald-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Live Sync Active
@@ -1139,7 +1139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 {rev.admin_response ? (
                   <div className="p-3 bg-white rounded-xl border border-[#E3D8CE] text-stone-700">
-                    <span className="font-bold text-[#2C221E] block">Monikaz Parlour Response:</span>
+                    <span className="font-bold text-[#2C221E] block">Monikazz Salon & Academy Response:</span>
                     <span>{rev.admin_response}</span>
                   </div>
                 ) : (
@@ -1765,7 +1765,7 @@ function QrGenerator() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'monikaz-parlour-qr.png';
+            a.download = 'monikazz-salon-academy-qr.png';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);

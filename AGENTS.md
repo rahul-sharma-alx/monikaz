@@ -1,4 +1,4 @@
-# Monikaz Parlour — Agent Guide
+# Monikazz Salon & Academy — Agent Guide
 
 ## Commands
 - `npm run dev` — starts Express API + Vite dev together (via `tsx server.ts`)

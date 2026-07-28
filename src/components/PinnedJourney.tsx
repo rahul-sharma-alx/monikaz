@@ -58,6 +58,16 @@ export const PinnedJourney: React.FC<{ onOpenBooking: () => void }> = ({ onOpenB
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartX = useRef<number>(0);
+
+  const navigate = (idx: number) => {
+    setActiveIndex(idx);
+    if (tickRef.current) clearInterval(tickRef.current);
+    tickRef.current = setInterval(() => {
+      setActiveIndex(prev => (prev + 1) % STEPS.length);
+    }, 4000);
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -69,11 +79,16 @@ export const PinnedJourney: React.FC<{ onOpenBooking: () => void }> = ({ onOpenB
   }, []);
 
   useEffect(() => {
-    if (isMobile || !containerRef.current) return;
+    if (isMobile) {
+      navigate(activeIndex);
+      return () => { if (tickRef.current) clearInterval(tickRef.current); };
+    }
+  }, [isMobile]);
 
+  useEffect(() => {
+    if (isMobile || !containerRef.current) return;
     const ctx = gsap.context(() => {
       const totalSteps = STEPS.length;
-
       ScrollTrigger.create({
         trigger: containerRef.current,
         start: 'top top',
@@ -81,20 +96,23 @@ export const PinnedJourney: React.FC<{ onOpenBooking: () => void }> = ({ onOpenB
         pin: true,
         scrub: 0.5,
         onUpdate: (self) => {
-          const idx = Math.min(
-            totalSteps - 1,
-            Math.floor(self.progress * totalSteps)
-          );
-          setActiveIndex(idx);
+          setActiveIndex(Math.min(totalSteps - 1, Math.floor(self.progress * totalSteps)));
         },
       });
     }, containerRef);
-
     return () => ctx.revert();
   }, [isMobile]);
 
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      navigate((activeIndex + (diff > 0 ? 1 : -1) + STEPS.length) % STEPS.length);
+    }
+  };
+
   return (
-    <section className="bg-[#2C221E] text-white py-16 md:py-0 border-y border-[#4A3933] overflow-hidden relative">
+    <section className="bg-[#2C221E] text-white py-16 md:py-0 border-y border-[#4A3933] overflow-hidden relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {/* Desktop Pinned Container */}
       <div
         ref={containerRef}
@@ -108,7 +126,7 @@ export const PinnedJourney: React.FC<{ onOpenBooking: () => void }> = ({ onOpenB
               <span>Client Experience Journey</span>
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-1">
-              The Monikaz Sanctuary Ritual
+              The Monikazz Sanctuary Ritual
             </h2>
           </div>
 
@@ -117,11 +135,11 @@ export const PinnedJourney: React.FC<{ onOpenBooking: () => void }> = ({ onOpenB
             {STEPS.map((step, idx) => (
               <button
                 key={step.id}
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => navigate(idx)}
                 className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                   activeIndex === idx ? 'w-10 bg-[#D4AF37]' : 'w-3 bg-stone-700 hover:bg-stone-500'
                 }`}
-                title={`Jump to step ${idx + 1}`}
+                title={`Step ${idx + 1}`}
               />
             ))}
           </div>

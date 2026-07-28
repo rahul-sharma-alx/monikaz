@@ -171,7 +171,7 @@ export const BookingFlowModal: React.FC<BookingFlowModalProps> = ({
               Book Your Appointment
             </span>
             <h3 className="font-serif text-2xl font-bold mt-0.5">
-              Monikaz Parlour <span className="italic font-normal text-[#D4AF37]">Booking</span>
+              Monikazz <span className="italic font-normal text-[#D4AF37]">Salon & Academy · Booking</span>
             </h3>
           </div>
 

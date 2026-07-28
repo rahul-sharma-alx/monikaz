@@ -1,6 +1,6 @@
-# Monikaz Parlour — Luxury Salon & Beauty Booking Web Application
+# Monikazz Salon & Academy — Luxury Salon & Beauty Booking Web Application
 
-Monikaz Parlour is a full-stack salon & beauty parlour booking web application built with React, TypeScript, Tailwind CSS, Express, and Supabase / Postgres integration.
+Monikazz Salon & Academy is a full-stack salon & beauty academy booking web application built with React, TypeScript, Tailwind CSS, Express, and Supabase / Postgres integration.
 
 ---
 

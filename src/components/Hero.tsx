@@ -126,7 +126,7 @@ export const Hero: React.FC<HeroProps> = ({
           <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-stone-200">
             <img
               src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1000"
-              alt="Monikaz Parlour Salon Ambience"
+              alt="Monikazz Salon & Academy Ambience"
               referrerPolicy="no-referrer"
               className="w-full h-[380px] sm:h-[440px] object-cover hover:scale-105 transition-transform duration-700"
             />
@@ -143,7 +143,7 @@ export const Hero: React.FC<HeroProps> = ({
               MS
             </div>
             <div>
-              <p className="text-xs font-bold text-[#2C221E]">Monika Sharma</p>
+              <p className="text-xs font-bold text-[#2C221E]">Madhushree</p>
               <p className="text-[11px] text-[#8A7568]">Founder & Senior Stylist</p>
               <div className="flex items-center gap-1 mt-0.5 text-amber-500 text-[10px]">
                 <Star className="w-3 h-3 fill-current" />
