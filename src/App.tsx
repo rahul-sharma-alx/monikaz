@@ -783,6 +783,7 @@ export default function App() {
 
         {/* Interactive Booking Wizard Modal */}
         <BookingFlowModal
+          key={currentUser?.id || 'no-user'}
           isOpen={isBookingModalOpen}
           onClose={() => setIsBookingModalOpen(false)}
           services={services}
